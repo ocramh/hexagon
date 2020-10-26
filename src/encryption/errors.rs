@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum EncrytpError {
   #[error("data encryption failed: {0}")]
   Encryption(String),
