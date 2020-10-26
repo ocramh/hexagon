@@ -2,8 +2,8 @@
 extern crate rand;
 extern crate tindercrypt;
 
-// use std::fs;
 use anyhow::{Context, Result};
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -30,11 +30,12 @@ fn main() -> Result<()> {
     Err(_) => println!("file not written"),
   };
 
-  println!("{}", cryptor.get_key());
+  let buf = match fs::read(file_path) {
+    Ok(v) => v,
+    Err(e) => panic!("error reading from file: {}", e),
+  };
 
-  // let buf = match fs::read(file_path) {
-  //   Ok(v) => v,
-  //   Err(e) => panic!("error reading from file: {}", e),
-  // };
+  let content = cryptor.decrypt(buf.as_slice())?;
+  println!("{}", String::from_utf8_lossy(content.as_slice()));
   Ok(())
 }

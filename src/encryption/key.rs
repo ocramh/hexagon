@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Key(pub [u8; 32]);
 
 impl fmt::Display for Key {

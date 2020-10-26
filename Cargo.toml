@@ -1,5 +1,5 @@
 [package]
-name = "encryptor"
+name = "exagon"
 version = "0.1.0"
 authors = ["ocramh <ocramh11@gmail.com>"]
 edition = "2018"
