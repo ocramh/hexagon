@@ -4,10 +4,9 @@ version = "0.1.0"
 authors = ["ocramh <ocramh11@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 rand = "0.7"
 tindercrypt = "0.2.2"
 thiserror = "1.0.21"
 anyhow = "1.0.33"
+openssl = { version = "0.10", features = ["vendored"] }
