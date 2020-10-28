@@ -12,7 +12,16 @@ mod encryption;
 use encryption::aes;
 use encryption::encryption::SymmetricEncryptor;
 
+mod rsa;
+use rsa::keygen;
+
 fn main() -> Result<()> {
+  let kgen = keygen::KeyManager{
+    privkey_path: String::from("TO DO"),
+    publkey_path: String::from("TO DO")
+  };
+  kgen.new_keypair().unwrap();
+
   let cryptor: aes::Cryptor = SymmetricEncryptor::new_with_key();
 
   let file_path = Path::new("test_file.txt");
