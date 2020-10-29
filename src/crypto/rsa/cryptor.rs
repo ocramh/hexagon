@@ -1,6 +1,6 @@
 extern crate openssl;
 
-use super::keygen::{BoxResult, KeyGen, KeyPair};
+use crate::crypto::rsa::keygen::{BoxResult, KeyGen, KeyPair};
 
 pub struct Cryptor {
   keys: KeyPair,

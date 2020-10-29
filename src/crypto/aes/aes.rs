@@ -3,9 +3,9 @@ extern crate tindercrypt;
 use rand::{thread_rng, Rng};
 use tindercrypt::cryptors::RingCryptor;
 
-use super::encryption::SymmetricEncryptor;
-use super::errors::EncrytpError;
-use super::key::Key;
+use crate::crypto::aes::encryption::SymmetricEncryptor;
+use crate::crypto::aes::key::Key;
+use crate::crypto::errors::EncrytpError;
 
 pub struct Cryptor<'a> {
   key: Key,
