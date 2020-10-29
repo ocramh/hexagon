@@ -31,5 +31,6 @@ impl KeyGen {
     })
   }
 
-  pub fn save_keys_to_file(&self, key_name: String) {}
+  #[allow(dead_code)]
+  pub fn save_keys_to_file(&self, _key_name: String) {}
 }
