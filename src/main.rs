@@ -13,14 +13,12 @@ use encryption::aes;
 use encryption::encryption::SymmetricEncryptor;
 
 mod rsa;
-use rsa::keygen;
+use rsa::{cryptor, keygen};
 
 fn main() -> Result<()> {
-  let kgen = keygen::KeyManager{
-    privkey_path: String::from("TO DO"),
-    publkey_path: String::from("TO DO")
-  };
-  kgen.new_keypair().unwrap();
+  let rsa_keygen = keygen::KeyGen {};
+  let rsa_cyptor = cryptor::Cryptor::new(&rsa_keygen).unwrap();
+  rsa_cyptor.encrypt(&[1, 2, 3]).unwrap();
 
   let cryptor: aes::Cryptor = SymmetricEncryptor::new_with_key();
 
