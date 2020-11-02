@@ -2,7 +2,6 @@ extern crate openssl;
 
 use openssl::rsa::Rsa;
 use std::error::Error;
-use std::str;
 
 const KEY_SIZE: u32 = 4096;
 
@@ -21,9 +20,6 @@ impl KeyGen {
 
     let priv_key: Vec<u8> = rsa.private_key_to_pem().unwrap();
     let publ_key: Vec<u8> = rsa.public_key_to_pem().unwrap();
-
-    println!("private k: {}", str::from_utf8(&priv_key).unwrap());
-    println!("public k: {}", str::from_utf8(&publ_key).unwrap());
 
     Ok(KeyPair {
       publkey: publ_key,
