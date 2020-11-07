@@ -8,12 +8,19 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-mod encryption;
-use encryption::aes;
-use encryption::encryption::SymmetricEncryptor;
+mod crypto;
+mod filesys;
+use crypto::aes::aes;
+use crypto::aes::encryption::SymmetricEncryptor;
+use crypto::rsa::cryptor;
+use crypto::rsa::keygen;
 
 fn main() -> Result<()> {
-  let cryptor: aes::Cryptor = SymmetricEncryptor::new_with_key();
+  let rsa_keygen = keygen::KeyGen {};
+  let rsa_cyptor = cryptor::Cryptor::new(&rsa_keygen).unwrap();
+  rsa_cyptor.encrypt(&[1, 2, 3]).unwrap();
+
+  let aes_cryptor: aes::Cryptor = SymmetricEncryptor::new_with_key();
 
   let file_path = Path::new("test_file.txt");
   let mut file =
@@ -21,7 +28,7 @@ fn main() -> Result<()> {
 
   let content = "the secret content".as_bytes();
 
-  let cyphertext = cryptor
+  let cyphertext = aes_cryptor
     .encrypt(&content)
     .context("error  encrypting file")?;
 
@@ -35,7 +42,7 @@ fn main() -> Result<()> {
     Err(e) => panic!("error reading from file: {}", e),
   };
 
-  let content = cryptor.decrypt(buf.as_slice())?;
+  let content = aes_cryptor.decrypt(buf.as_slice())?;
   println!("{}", String::from_utf8_lossy(content.as_slice()));
   Ok(())
 }

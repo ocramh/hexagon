@@ -1,5 +1,5 @@
-use super::errors::EncrytpError;
-use super::key::Key;
+use crate::crypto::aes::key::Key;
+use crate::crypto::errors::EncrytpError;
 
 // SymmetricEncryptor defines a set of methods for generating a cypher (key), encrypt
 // and decrypt bytes of data
