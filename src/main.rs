@@ -9,6 +9,7 @@ use std::io::prelude::*;
 use std::path::Path;
 
 mod crypto;
+mod filesys;
 use crypto::aes::aes;
 use crypto::aes::encryption::SymmetricEncryptor;
 use crypto::rsa::cryptor;
