@@ -12,7 +12,7 @@ impl Cryptor {
   pub fn new(keygen: &KeyGen) -> BoxResult<Self> {
     let keypair = keygen.new_keypair()?;
 
-    // keygen.save_keys_to_file(&keypair.rsa, &String::from("id_rsa"))?;
+    // keygen.save_keys_to_file(&keypair.rsa, &String::from("."))?;
 
     Ok(Cryptor { keys: keypair })
   }

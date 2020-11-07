@@ -10,6 +10,7 @@ use std::io::prelude::*;
 use std::path::Path;
 
 const KEY_SIZE: u32 = 4096;
+const DEFAULT_KEY_NAME: &str = "id_rsa";
 
 pub type BoxResult<T> = Result<T, Box<dyn Error>>;
 
@@ -33,10 +34,13 @@ impl KeyGen {
       )));
     }
 
+    let mut save_to = Path::new(dest_path).to_path_buf();
+    if save_to.is_dir() {
+      save_to = save_to.join(DEFAULT_KEY_NAME);
+    }
+
     let priv_u8 = key.private_key_to_pem()?;
     let pub_u8 = key.public_key_to_pem()?;
-
-    let save_to = Path::new(dest_path);
 
     let mut priv_file =
       File::create(&save_to).context(format!("error creating file {}", save_to.display()))?;
