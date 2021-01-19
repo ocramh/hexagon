@@ -1,50 +1,67 @@
-extern crate tindercrypt;
-
-use rand::{thread_rng, Rng};
-use tindercrypt::cryptors::RingCryptor;
+extern crate crypto as cryp;
+extern crate rand;
 
 use crate::crypto::aes::encryption::SymmetricEncryptor;
 use crate::crypto::aes::key::Key;
 use crate::crypto::errors::EncrytpError;
+use cryp::buffer::{BufferResult, ReadBuffer, WriteBuffer};
+use cryp::{aes, blockmodes, buffer, symmetriccipher};
+use rand::{thread_rng, OsRng, Rng};
 
-pub struct Cryptor<'a> {
+pub struct AESCryptor {
   key: Key,
-  cryptor: RingCryptor<'a>,
 }
 
-pub fn new<'b>() -> Cryptor<'b> {
-  let mut rng = thread_rng();
+impl AESCryptor {
+  pub fn new() -> AESCryptor {
+    let mut rng = thread_rng();
 
-  Cryptor {
-    key: Key(rng.gen()),
-    cryptor: RingCryptor::new(),
-  }
-}
-
-impl<'a> SymmetricEncryptor for Cryptor<'a> {
-  fn new_with_key() -> Cryptor<'a> {
-    new()
-  }
-
-  fn get_key(&self) -> Key {
-    self.key.clone()
-  }
-
-  fn encrypt(&self, content: &[u8]) -> Result<Vec<u8>, EncrytpError> {
-    match self.cryptor.seal_with_key(&self.key.0, content) {
-      Ok(v) => Ok(v),
-      Err(e) => Err(EncrytpError::Encryption(e.to_string())),
-    }
-  }
-
-  fn decrypt(&self, content: &[u8]) -> Result<Vec<u8>, EncrytpError> {
-    match self.cryptor.open(&self.key.0, content) {
-      Ok(v) => Ok(v),
-      Err(e) => Err(EncrytpError::Decryption(e.to_string())),
+    AESCryptor {
+      key: Key(rng.gen()),
     }
   }
 }
 
+impl SymmetricEncryptor for AESCryptor {
+  fn gen_random_key(&self) -> Key {
+    let mut rng = thread_rng();
+    Key(rng.gen())
+  }
+
+  // encrypts content using an AES-CTR cipher
+  fn encrypt(&self, content: &[u8], key: &[u8], nonce: &[u8]) -> Result<Vec<u8>, EncrytpError> {
+    let mut kkey: [u8; 32] = [0; 32];
+    let mut iiv: [u8; 16] = [0; 16];
+    let mut rng = OsRng::new().ok().unwrap();
+    rng.fill_bytes(&mut kkey);
+    rng.fill_bytes(&mut iiv);
+
+    println!("build encryptor");
+    let mut encryptor = aes::ctr(aes::KeySize::KeySize128, &kkey, &iiv);
+
+    println!("setting capacity");
+    let mut output_cypher = Vec::with_capacity(content.len());
+    output_cypher.resize(content.len(), 0);
+
+    println!(
+      "input len: {}. output len: {}",
+      content.len(),
+      output_cypher.len()
+    );
+    encryptor.process(content, &mut output_cypher);
+
+    println!("putputting it");
+    Ok(output_cypher)
+  }
+
+  fn decrypt(&self, _content: &[u8], _key: &[u8], _iv: &[u8]) -> Result<Vec<u8>, EncrytpError> {
+    let output_vec = Vec::<u8>::new();
+
+    Ok(output_vec)
+  }
+}
+
+/*
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -83,3 +100,4 @@ mod tests {
     }
   }
 }
+*/
