@@ -3,7 +3,6 @@ extern crate rand;
 extern crate tindercrypt;
 
 use anyhow::{Context, Result};
-use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -13,7 +12,7 @@ mod filesys;
 use crate::crypto::aes::aes;
 use crate::crypto::aes::encryption::SymmetricEncryptor;
 // use crate::crypto::rsa::cryptor;
-use crate::crypto::rsa::keygen;
+// use crate::crypto::rsa::keygen;
 
 fn main() -> Result<()> {
   // let rsa_keygen = keygen::KeyGen {};
