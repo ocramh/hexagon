@@ -33,6 +33,7 @@ impl SymmetricEncryptor for AESCryptor {
     Ok(output_cypher)
   }
 
+  // decrypts a cipher using the encrytpion key and the initialization vector provided
   fn decrypt(&self, cypher: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, EncrytpError> {
     let mut decryptor = aes::ctr(aes::KeySize::KeySize128, &key, &iv);
 
@@ -44,9 +45,7 @@ impl SymmetricEncryptor for AESCryptor {
     loop {
       let res = match decryptor.decrypt(&mut read_buffer, &mut write_buffer, true) {
         Ok(v) => v,
-        Err(e) => {
-          return Err(EncrytpError::Encryption(format!("{:?}", e)));
-        }
+        Err(e) => return Err(EncrytpError::Decryption(format!("{:?}", e))),
       };
 
       output.extend(
@@ -69,6 +68,7 @@ impl SymmetricEncryptor for AESCryptor {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use rand::OsRng;
 
   #[test]
   fn encrypt_decrypt_bytes() -> Result<(), EncrytpError> {
@@ -98,6 +98,6 @@ mod tests {
 
     let decrypted = cryptor.decrypt(content.as_bytes(), &key.0, &iv).unwrap();
 
-    assert!(String::from_utf8(decrypted).is_err());
+    assert_ne!(decrypted, content.as_bytes());
   }
 }
