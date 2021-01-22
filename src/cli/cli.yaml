@@ -1,0 +1,42 @@
+name: HEXAGON
+version: "0.0.1"
+author: Marco <marco@sygma.io>
+about: Cryptography Command Line Tool
+args:
+    - INPUT:
+        about: Sets the input file to use
+        required: false
+        index: 1
+    - verbose:
+        short: v
+        multiple: true
+        about: Sets the level of verbosity
+subcommands:
+    - test:
+        about: Controls testing features
+        args:
+            - debug:
+                short: d
+                about: print debug information
+    - symmetric:
+        about: Performs symmetric-key encryption and decryption operations
+        subcommands:
+          - encrypt:
+              short: e
+              about: Encrypts plaintext using the provided key
+              args:
+                - input:
+                    required: true
+                    about: the plaintext input to encrypt
+                - key:
+                    required: true
+                    about: the secret key to use for encryption
+          - decrypt:
+              short: d
+              about: Decrypts a cypher using the provided key
+    - asymmetric:
+        about: Performs public-key encryption and decryption operations
+        args:
+            - debug:
+                short: d
+                about: print debug information

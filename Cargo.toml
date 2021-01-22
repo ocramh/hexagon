@@ -1,12 +1,12 @@
 [package]
-name = "exagon"
+name = "hexagon"
 version = "0.1.0"
 authors = ["ocramh <ocramh11@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+clap = { version = "3.0.0-beta.2", features = ["yaml"] }
 rand = "^0.3"
-tindercrypt = "0.2.2"
 rust-crypto = "^0.2"
 thiserror = "1.0.21"
 anyhow = "1.0.33"
