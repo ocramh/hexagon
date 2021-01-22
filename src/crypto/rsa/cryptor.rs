@@ -20,10 +20,11 @@ impl RSACryptor {
   pub fn new_with_keys(privk: Vec<u8>) -> Result<RSACryptor, CryptoError> {
     let privk_from_pem = match Rsa::private_key_from_pem(&privk) {
       Ok(k) => k,
-      Err(_) => {
-        return Err(CryptoError::Encryption(
-          "error generating private key from pem".to_string(),
-        ))
+      Err(e) => {
+        return Err(CryptoError::Encryption(format!(
+          "error generating private key from pem: {}",
+          e
+        )))
       }
     };
 
@@ -84,11 +85,11 @@ mod tests {
   fn new_with_keys_error() -> BoxResult<()> {
     let privk = std::vec::Vec::new();
     match RSACryptor::new_with_keys(privk) {
-      Ok(_) => panic!("creating RSA keys with an empty vector shouldn't work"),
-      Err(e) => assert_eq!(
-        e,
-        CryptoError::Encryption("error generating private key from pem".to_string())
+      Ok(_) => assert!(
+        false,
+        "creating RSA keys from an empty vector shouldn't work"
       ),
+      Err(_) => assert!(true),
     }
 
     Ok(())
