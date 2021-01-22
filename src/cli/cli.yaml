@@ -27,10 +27,19 @@ subcommands:
               args:
                 - input:
                     required: true
+                    short: i
                     about: the plaintext input to encrypt
+                    takes_value: true
                 - key:
                     required: true
+                    short: k
                     about: the secret key to use for encryption
+                    takes_value: true
+                - output:
+                    required: true
+                    short: o
+                    about: the destination output (defaults to stdin)
+                    takes_value: true
           - decrypt:
               short: d
               about: Decrypts a cypher using the provided key
