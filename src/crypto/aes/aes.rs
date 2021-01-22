@@ -3,7 +3,7 @@ extern crate rand;
 
 use crate::crypto::aes::encryption::SymmetricEncryptor;
 use crate::crypto::aes::key::Key;
-use crate::crypto::errors::EncrytpError;
+use crate::crypto::errors::CryptoError;
 use cryp::buffer::{BufferResult, ReadBuffer, WriteBuffer};
 use cryp::symmetriccipher::Decryptor;
 use cryp::{aes, buffer};
@@ -24,7 +24,7 @@ impl SymmetricEncryptor for AESCryptor {
   }
 
   // encrypts content using an AES-CTR cipher
-  fn encrypt(&self, content: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, EncrytpError> {
+  fn encrypt(&self, content: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let mut encryptor = aes::ctr(aes::KeySize::KeySize128, &key, &iv);
 
     let mut output_cypher = Vec::with_capacity(content.len());
@@ -34,7 +34,7 @@ impl SymmetricEncryptor for AESCryptor {
   }
 
   // decrypts a cipher using the encrytpion key and the initialization vector provided
-  fn decrypt(&self, cypher: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, EncrytpError> {
+  fn decrypt(&self, cypher: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let mut decryptor = aes::ctr(aes::KeySize::KeySize128, &key, &iv);
 
     let mut output = Vec::<u8>::new();
@@ -45,7 +45,7 @@ impl SymmetricEncryptor for AESCryptor {
     loop {
       let res = match decryptor.decrypt(&mut read_buffer, &mut write_buffer, true) {
         Ok(v) => v,
-        Err(e) => return Err(EncrytpError::Decryption(format!("{:?}", e))),
+        Err(e) => return Err(CryptoError::Decryption(format!("{:?}", e))),
       };
 
       output.extend(
@@ -71,7 +71,7 @@ mod tests {
   use rand::OsRng;
 
   #[test]
-  fn encrypt_decrypt_bytes() -> Result<(), EncrytpError> {
+  fn encrypt_decrypt_bytes() -> Result<(), CryptoError> {
     let cryptor: AESCryptor = AESCryptor::new();
     let content = String::from("foobarbaz💖");
     let key = cryptor.gen_random_key();

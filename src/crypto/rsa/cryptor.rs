@@ -1,35 +1,45 @@
 extern crate openssl;
 
+use crate::crypto::errors::CryptoError;
 use crate::crypto::rsa::keygen::{BoxResult, KeyGen, KeyPair};
 use openssl::rsa::{Padding, Rsa};
-use std::str;
 
-pub struct Cryptor {
+pub struct RSACryptor {
   keys: KeyPair,
 }
 
-impl Cryptor {
-  pub fn new(keygen: &KeyGen) -> BoxResult<Self> {
+impl RSACryptor {
+  #[allow(dead_code)]
+  pub fn new(keygen: &KeyGen) -> BoxResult<RSACryptor> {
     let keypair = keygen.new_keypair()?;
 
-    // keygen.save_keys_to_file(&keypair.rsa, &String::from("."))?;
-
-    Ok(Cryptor { keys: keypair })
+    Ok(RSACryptor { keys: keypair })
   }
 
   #[allow(dead_code)]
-  pub fn new_with_keys(privk: Vec<u8>) -> BoxResult<Self> {
-    let privk_from_pem = Rsa::private_key_from_pem(&privk)?;
+  pub fn new_with_keys(privk: Vec<u8>) -> Result<RSACryptor, CryptoError> {
+    let privk_from_pem = match Rsa::private_key_from_pem(&privk) {
+      Ok(k) => k,
+      Err(e) => {
+        return Err(CryptoError::Encryption(format!(
+          "error generating private key from pem: {}",
+          e
+        )))
+      }
+    };
 
-    Ok(Cryptor {
+    Ok(RSACryptor {
       keys: KeyPair {
         rsa: privk_from_pem,
       },
     })
   }
 
-  pub fn encrypt(&self, content: &[u8]) -> BoxResult<Vec<u8>> {
+  // encrypt content using the RSACryptor public key
+  #[allow(dead_code)]
+  pub fn encrypt(&self, content: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let mut dest_buffer: Vec<u8> = vec![0; self.keys.rsa.size() as usize];
+
     self
       .keys
       .rsa
@@ -38,31 +48,50 @@ impl Cryptor {
     Ok(dest_buffer)
   }
 
-  pub fn decrypt(&self, content: &[u8]) -> BoxResult<Vec<u8>> {
+  // encrypt content using the RSACryptor private key
+  #[allow(dead_code)]
+  pub fn decrypt(&self, content: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let mut dest_buffer: Vec<u8> = vec![0; self.keys.rsa.size() as usize];
+
     self
       .keys
       .rsa
       .private_decrypt(content, &mut dest_buffer, Padding::PKCS1)?;
 
-    println!("Decrypted: {}", str::from_utf8(&dest_buffer).unwrap());
-
     Ok(dest_buffer)
   }
 }
 
-#[test]
-fn encrypt_decrypt_bytes() -> BoxResult<()> {
-  let rsa_keygen = KeyGen {};
-  let rsa_cyptor = Cryptor::new(&rsa_keygen).unwrap();
-  let content = String::from("A quick brown fox jumps over the lazy dog");
+#[cfg(test)]
+mod tests {
+  use super::*;
+  #[test]
+  fn encrypt_decrypt_bytes() -> BoxResult<()> {
+    let rsa_keygen = KeyGen {};
+    let rsa_cyptor = RSACryptor::new(&rsa_keygen).unwrap();
+    let content = String::from("foobarbaz💖");
 
-  let encrypted = rsa_cyptor.encrypt(&content.as_bytes()).unwrap();
+    let encrypted = rsa_cyptor.encrypt(&content.as_bytes()).unwrap();
 
-  let mut decrypted = rsa_cyptor.decrypt(&encrypted).unwrap();
-  decrypted.truncate(content.len());
+    let mut decrypted = rsa_cyptor.decrypt(&encrypted).unwrap();
+    decrypted.truncate(content.len());
 
-  assert_eq!(content.as_bytes(), decrypted.as_slice());
+    assert_eq!(content.as_bytes(), decrypted.as_slice());
 
-  Ok(())
+    Ok(())
+  }
+
+  #[test]
+  fn new_with_keys_error() -> BoxResult<()> {
+    let privk = std::vec::Vec::new();
+    match RSACryptor::new_with_keys(privk) {
+      Ok(_) => assert!(
+        false,
+        "creating RSA keys from an empty vector shouldn't work"
+      ),
+      Err(_) => assert!(true),
+    }
+
+    Ok(())
+  }
 }
