@@ -12,39 +12,37 @@ args:
         multiple: true
         about: Sets the level of verbosity
 subcommands:
-    - test:
-        about: Controls testing features
+    - encrypt:
+        about: Encrypts the input
+        args:
+            - type:
+                short: t
+                long: type
+                about: the type of encryption to perform
+                required: true
+                possible_values:
+                  - symmetric
+                  - asymmetric
+                default_value: symmetric
+            - key:
+                short: k
+                long: key
+                about: path to the encryption key
+                required: true
+                takes_value: true
+            - output:
+                short: o
+                long: output
+                about: path to output file
+                takes_value: true
+    - decrypt:
+        about: Decrypts the input
         args:
             - debug:
                 short: d
                 about: print debug information
-    - symmetric:
-        about: Performs symmetric-key encryption and decryption operations
-        subcommands:
-          - encrypt:
-              short: e
-              about: Encrypts plaintext using the provided key
-              args:
-                - input:
-                    required: true
-                    short: i
-                    about: the plaintext input to encrypt
-                    takes_value: true
-                - key:
-                    required: true
-                    short: k
-                    about: the secret key to use for encryption
-                    takes_value: true
-                - output:
-                    required: true
-                    short: o
-                    about: the destination output (defaults to stdin)
-                    takes_value: true
-          - decrypt:
-              short: d
-              about: Decrypts a cypher using the provided key
-    - asymmetric:
-        about: Performs public-key encryption and decryption operations
+    - test:
+        about: Controls testing features
         args:
             - debug:
                 short: d
