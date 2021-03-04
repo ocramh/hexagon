@@ -9,10 +9,16 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-const KEY_SIZE: u32 = 4096;
 const DEFAULT_KEY_NAME: &str = "id_rsa";
 
 pub type BoxResult<T> = Result<T, Box<dyn Error>>;
+
+#[repr(u32)]
+pub enum KeySize {
+  S1024 = 1024,
+  S2048 = 2048,
+  S4096 = 4096,
+}
 
 pub struct KeyPair {
   pub rsa: Rsa<Private>,
@@ -21,8 +27,17 @@ pub struct KeyPair {
 pub struct KeyGen {}
 
 impl KeyGen {
-  pub fn new_keypair(&self) -> BoxResult<KeyPair> {
-    let rsa = Rsa::generate(KEY_SIZE)?;
+  pub fn new() -> Self {
+    KeyGen {}
+  }
+
+  pub fn gen_keypair(&self, size: Option<KeySize>) -> BoxResult<KeyPair> {
+    let keysize = match size {
+      Some(v) => v,
+      None => KeySize::S2048,
+    };
+
+    let rsa = Rsa::generate(keysize as u32)?;
     Ok(KeyPair { rsa })
   }
 

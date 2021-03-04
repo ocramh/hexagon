@@ -3,46 +3,60 @@ version: "0.0.1"
 author: Marco <marco@sygma.io>
 about: Cryptography Command Line Tool
 args:
-    - INPUT:
-        about: Sets the input file to use
+    - input:
+        about: sets the input file to work with
         required: false
         index: 1
     - verbose:
         short: v
         multiple: true
-        about: Sets the level of verbosity
+        about: sets the level of verbosity
 subcommands:
+    - keygen:
+        about: generates public/private key pair
+        args:
+          - size:
+              short: s
+              long: size
+              about: the key size in bytes
+              required: true
+              possible_values:
+                - "1024"
+                - "2048"
+                - "4096"
+              default_value: "2048"
+          - destination:
+              short: d
+              long: dest
+              about: path to where the key pair will be saved
+              required: true
+              default_value: "./"
+
     - encrypt:
-        about: Encrypts the input
+        about: encrypts the input
         args:
-            - type:
-                short: t
-                long: type
-                about: the type of encryption to perform
-                required: true
-                possible_values:
-                  - symmetric
-                  - asymmetric
-                default_value: symmetric
-            - key:
-                short: k
-                long: key
-                about: path to the encryption key
-                required: true
-                takes_value: true
-            - output:
-                short: o
-                long: output
-                about: path to output file
-                takes_value: true
+          - type:
+              short: t
+              long: type
+              about: the type of encryption to perform
+              required: true
+              possible_values:
+                - symmetric
+                - asymmetric
+              default_value: symmetric
+          - key:
+              short: k
+              long: key
+              about: path to the encryption key
+              required: true
+              takes_value: true
+          - output:
+              short: o
+              long: output
+              about: path to output file
+              takes_value: true
     - decrypt:
-        about: Decrypts the input
-        args:
-            - debug:
-                short: d
-                about: print debug information
-    - test:
-        about: Controls testing features
+        about: decrypts the input
         args:
             - debug:
                 short: d

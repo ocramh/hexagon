@@ -11,7 +11,7 @@ pub struct RSACryptor {
 impl RSACryptor {
   #[allow(dead_code)]
   pub fn new(keygen: &KeyGen) -> BoxResult<RSACryptor> {
-    let keypair = keygen.new_keypair()?;
+    let keypair = keygen.gen_keypair(None)?;
 
     Ok(RSACryptor { keys: keypair })
   }
