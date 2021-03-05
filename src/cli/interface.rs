@@ -4,8 +4,14 @@ pub fn cli() {
   let yaml = load_yaml!("cli.yaml");
   let matches = App::from(yaml).get_matches();
 
-  if let Some(ref _matches) = matches.subcommand_matches("symmetric") {
-    println!("do symmetric encryption")
+  if let Some(ref _matches) = matches.subcommand_matches("keygen") {
+    let f = matches.subcommand_matches("keygen").unwrap();
+    let keysize = f.value_of("size").unwrap();
+    let dest = f.value_of("destination").unwrap();
+    println!(
+      "generate rsa keypair of size {:?}, save at {:?}",
+      keysize, dest
+    );
   }
 
   if let Some(ref _matches) = matches.subcommand_matches("asymmetric") {

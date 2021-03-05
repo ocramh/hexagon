@@ -19,6 +19,7 @@ subcommands:
               short: s
               long: size
               about: the key size in bytes
+              takes_value: true
               required: true
               possible_values:
                 - "1024"
