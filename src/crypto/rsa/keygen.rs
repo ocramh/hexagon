@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-const DEFAULT_KEY_NAME: &str = "id_rsa";
+pub const DEFAULT_KEY_NAME: &str = "id_rsa";
 
 pub type BoxResult<T> = Result<T, Box<dyn Error>>;
 
@@ -18,6 +18,17 @@ pub enum KeySize {
   S1024 = 1024,
   S2048 = 2048,
   S4096 = 4096,
+}
+
+impl KeySize {
+  pub fn keysize_from_str(val: &str) -> Self {
+    match val {
+      "1024" => KeySize::S1024,
+      "2048" => KeySize::S2048,
+      "4096" => KeySize::S4096,
+      _ => panic!("invalid key size"),
+    }
+  }
 }
 
 pub struct KeyPair {
@@ -42,7 +53,7 @@ impl KeyGen {
   }
 
   #[allow(dead_code)]
-  pub fn save_keys_to_file(&self, key: &Rsa<Private>, dest_path: &String) -> BoxResult<bool> {
+  pub fn save_keys_to_file(&self, key: &Rsa<Private>, dest_path: &str) -> BoxResult<bool> {
     if dest_path.is_empty() {
       return Err(Box::new(FsError::InvalidPath(
         "destination path cannot be empty".into(),
