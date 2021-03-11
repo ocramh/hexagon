@@ -1,7 +1,6 @@
 extern crate openssl;
 
-use crate::filesys::errors::FsError;
-use anyhow::{Context, Result};
+use crate::crypto::errors::CryptoError;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
 use std::error::Error;
@@ -21,13 +20,19 @@ pub enum KeySize {
 }
 
 impl KeySize {
-  pub fn keysize_from_str(val: &str) -> Self {
-    match val {
+  pub fn keysize_from_str(val: &str) -> Result<Self, CryptoError> {
+    let ks = match val {
       "1024" => KeySize::S1024,
       "2048" => KeySize::S2048,
       "4096" => KeySize::S4096,
-      _ => panic!("invalid key size"),
-    }
+      _ => {
+        return Err(CryptoError::InvalidKey(
+          "invalid key size. Allowed values are 1024, 2048, 4096".to_string(),
+        ))
+      }
+    };
+
+    Ok(ks)
   }
 }
 
@@ -53,11 +58,15 @@ impl KeyGen {
   }
 
   #[allow(dead_code)]
-  pub fn save_keys_to_file(&self, key: &Rsa<Private>, dest_path: &str) -> BoxResult<bool> {
+  pub fn save_keys_to_file(
+    &self,
+    key: &Rsa<Private>,
+    dest_path: &str,
+  ) -> Result<bool, CryptoError> {
     if dest_path.is_empty() {
-      return Err(Box::new(FsError::InvalidPath(
-        "destination path cannot be empty".into(),
-      )));
+      return Err(CryptoError::FilePath(
+        "destination path cannot be empty".to_string(),
+      ));
     }
 
     let mut save_to = Path::new(dest_path).to_path_buf();
@@ -65,16 +74,27 @@ impl KeyGen {
       save_to = save_to.join(DEFAULT_KEY_NAME);
     }
 
-    let priv_u8 = key.private_key_to_pem()?;
-    let pub_u8 = key.public_key_to_pem()?;
+    let priv_u8 = key
+      .private_key_to_pem()
+      .map_err(|source| CryptoError::OpenSSLError { source })?;
 
-    let mut priv_file =
-      File::create(&save_to).context(format!("error creating file {}", save_to.display()))?;
-    let mut pub_file = File::create(&save_to.with_extension("pub"))
-      .context(format!("error creating file {}", save_to.display()))?;
+    let pub_u8 = key
+      .public_key_to_pem()
+      .map_err(|source| CryptoError::OpenSSLError { source })?;
 
-    priv_file.write_all(&priv_u8)?;
-    pub_file.write_all(&pub_u8)?;
+    // error will automatically be wrpeed into CryptoError::IoError
+    let mut priv_file = File::create(&save_to)?;
+
+    // error will automatically be wrpeed into CryptoError::IoError
+    let mut pub_file = File::create(&save_to.with_extension("pub"))?;
+
+    priv_file
+      .write_all(&priv_u8)
+      .map_err(|source| CryptoError::WriteError { source })?;
+
+    pub_file
+      .write_all(&pub_u8)
+      .map_err(|source| CryptoError::WriteError { source })?;
 
     Ok(true)
   }

@@ -35,7 +35,7 @@ fn run_keygen_cmd(args: clap::ArgMatches) {
 
   println!("==> generating rsa keypair of size {:?}", size);
 
-  let keysize = keygen::KeySize::keysize_from_str(size);
+  let keysize = keygen::KeySize::keysize_from_str(size).unwrap();
   let keygen = keygen::KeyGen::new();
   let keypair = keygen.gen_keypair(Some(keysize)).unwrap();
 
