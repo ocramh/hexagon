@@ -10,8 +10,6 @@ use std::path::Path;
 
 pub const DEFAULT_KEY_NAME: &str = "id_rsa";
 
-pub type BoxResult<T> = Result<T, Box<dyn Error>>;
-
 #[repr(u32)]
 pub enum KeySize {
   S1024 = 1024,
@@ -47,7 +45,7 @@ impl KeyGen {
     KeyGen {}
   }
 
-  pub fn gen_keypair(&self, size: Option<KeySize>) -> BoxResult<KeyPair> {
+  pub fn gen_keypair(&self, size: Option<KeySize>) -> Result<KeyPair, CryptoError> {
     let keysize = match size {
       Some(v) => v,
       None => KeySize::S2048,

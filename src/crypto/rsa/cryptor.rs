@@ -1,7 +1,7 @@
 extern crate openssl;
 
 use crate::crypto::errors::CryptoError;
-use crate::crypto::rsa::keygen::{BoxResult, KeyGen, KeyPair};
+use crate::crypto::rsa::keygen::{KeyGen, KeyPair};
 use openssl::rsa::{Padding, Rsa};
 
 pub struct RSACryptor {
@@ -10,7 +10,7 @@ pub struct RSACryptor {
 
 impl RSACryptor {
   #[allow(dead_code)]
-  pub fn new(keygen: &KeyGen) -> BoxResult<RSACryptor> {
+  pub fn new(keygen: &KeyGen) -> Result<RSACryptor, CryptoError> {
     let keypair = keygen.gen_keypair(None)?;
 
     Ok(RSACryptor { keys: keypair })
@@ -66,7 +66,7 @@ impl RSACryptor {
 mod tests {
   use super::*;
   #[test]
-  fn encrypt_decrypt_bytes() -> BoxResult<()> {
+  fn encrypt_decrypt_bytes() -> Result<(), CryptoError> {
     let rsa_keygen = KeyGen {};
     let rsa_cyptor = RSACryptor::new(&rsa_keygen).unwrap();
     let content = String::from("foobarbaz💖");
