@@ -48,8 +48,12 @@ subcommands:
           - key:
               short: k
               long: key
-              about: path to the encryption key
-              required: true
+              about: path to the encryption public key
+              takes_value: true
+          - secret:
+              short: s
+              long: secret
+              about: path to the encryption secret
               takes_value: true
           - output:
               short: o
