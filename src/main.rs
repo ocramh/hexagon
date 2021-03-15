@@ -9,12 +9,12 @@ use anyhow::Result;
 mod cli;
 mod crypto;
 mod filesys;
-use crate::cli::interface;
+use crate::cli::tasks;
 // use crate::crypto::aes::aes;
 // use crate::crypto::aes::encryption::SymmetricEncryptor;
 
 fn main() -> Result<()> {
-  interface::cli();
+  tasks::run();
 
   // let aes_cryptor: aes::AESCryptor = aes::AESCryptor::new();
 
