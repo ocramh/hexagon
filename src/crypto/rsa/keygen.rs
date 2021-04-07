@@ -3,7 +3,6 @@ extern crate openssl;
 use crate::crypto::errors::CryptoError;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
-use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;

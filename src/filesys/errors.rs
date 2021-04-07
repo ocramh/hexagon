@@ -3,5 +3,5 @@ use thiserror::Error;
 #[derive(Debug, Error, PartialEq)]
 pub enum FsError {
   #[error("invalid path: {0}")]
-  InvalidPath(String),
+  _InvalidPath(String),
 }

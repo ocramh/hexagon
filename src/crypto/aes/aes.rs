@@ -33,7 +33,7 @@ impl SymmetricEncryptor for AESCryptor {
     Ok(output_cypher)
   }
 
-  // decrypts a cipher using the encrytpion key and the initialization vector provided
+  // decrypts a cipher using the encryption key and the initialization vector provided
   fn decrypt(&self, cypher: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let mut decryptor = aes::ctr(aes::KeySize::KeySize128, &key, &iv);
 

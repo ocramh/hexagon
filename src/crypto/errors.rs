@@ -20,7 +20,7 @@ pub enum CryptoError {
   OpenSSLError { source: openssl::error::ErrorStack },
 
   #[error("read error")]
-  ReadError { source: std::io::Error },
+  _ReadError { source: std::io::Error },
 
   #[error("write error")]
   WriteError { source: std::io::Error },
