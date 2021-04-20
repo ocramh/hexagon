@@ -63,6 +63,27 @@ subcommands:
     - decrypt:
         about: decrypts the input
         args:
-            - debug:
-                short: d
-                about: print debug information
+          - type:
+              short: t
+              long: type
+              about: the type of encryption to perform
+              required: true
+              possible_values:
+                - symmetric
+                - asymmetric
+              default_value: symmetric
+          - key:
+              short: k
+              long: key
+              about: path to the decryption public key
+              takes_value: true
+          - secret:
+              short: s
+              long: secret
+              about: path to the decryption secret
+              takes_value: true
+          - nonce:
+              short: n
+              long: nonce
+              about: the nonce or init vector used for decryption
+              takes_value: true

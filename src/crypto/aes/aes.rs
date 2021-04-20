@@ -1,13 +1,12 @@
-extern crate crypto as cryp;
 extern crate rand;
 
-use crate::crypto::aes::encryption::SymmetricEncryptor;
+use crate::crypto::aes::encryption::{CipherBox, SymmetricEncryptor};
 use crate::crypto::aes::key::Key;
 use crate::crypto::errors::CryptoError;
-use cryp::buffer::{BufferResult, ReadBuffer, WriteBuffer};
-use cryp::symmetriccipher::Decryptor;
-use cryp::{aes, buffer};
 use rand::{thread_rng, Rng};
+use sodiumoxide::crypto::hash;
+use sodiumoxide::crypto::secretbox;
+use sodiumoxide::crypto::secretbox::xsalsa20poly1305::Nonce;
 
 pub struct AESCryptor {}
 
@@ -24,80 +23,119 @@ impl SymmetricEncryptor for AESCryptor {
   }
 
   // encrypts content using an AES-CTR cipher
-  fn encrypt(&self, content: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, CryptoError> {
-    let mut encryptor = aes::ctr(aes::KeySize::KeySize128, &key, &iv);
+  fn encrypt(&self, plaintext: &[u8], secret: &[u8]) -> Result<CipherBox, CryptoError> {
+    let keyhash = hash::sha256::hash(&secret);
 
-    let mut output_cypher = Vec::with_capacity(content.len());
-    output_cypher.resize(content.len(), 0);
-    encryptor.process(content, &mut output_cypher);
-    Ok(output_cypher)
+    let key = secretbox::Key(keyhash.0);
+    let nonce = secretbox::gen_nonce();
+
+    let ciphertext = secretbox::seal(plaintext, &nonce, &key);
+
+    Ok(CipherBox {
+      b64_ciphertext: base64::encode(ciphertext),
+      b64_nonce: base64::encode(nonce),
+    })
   }
 
   // decrypts a cipher using the encryption key and the initialization vector provided
-  fn decrypt(&self, cypher: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, CryptoError> {
-    let mut decryptor = aes::ctr(aes::KeySize::KeySize128, &key, &iv);
+  fn decrypt(
+    &self,
+    ciphertext: &[u8],
+    secret: &[u8],
+    nonce: &[u8],
+  ) -> Result<Vec<u8>, CryptoError> {
+    let keyhash = hash::sha256::hash(&secret);
+    let key = secretbox::Key(keyhash.0);
 
-    let mut output = Vec::<u8>::new();
-    let mut read_buffer = buffer::RefReadBuffer::new(cypher);
-    let mut buffer = [0; 4096];
-    let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
-
-    loop {
-      let res = match decryptor.decrypt(&mut read_buffer, &mut write_buffer, true) {
-        Ok(v) => v,
-        Err(e) => return Err(CryptoError::Decryption(format!("{:?}", e))),
-      };
-
-      output.extend(
-        write_buffer
-          .take_read_buffer()
-          .take_remaining()
-          .iter()
-          .map(|&i| i),
-      );
-      match res {
-        BufferResult::BufferUnderflow => break,
-        BufferResult::BufferOverflow => {}
+    let b64decoded_ciphertext = match base64::decode(ciphertext) {
+      Ok(v) => v,
+      Err(e) => {
+        return Err(CryptoError::Decryption(format!(
+          "Invalid base46 ciphertext: {}",
+          e
+        )))
       }
-    }
+    };
 
-    Ok(output)
+    let n = match base64::decode(nonce) {
+      Ok(v) => v,
+      Err(e) => {
+        return Err(CryptoError::Decryption(format!(
+          "Invalid base46 nonce: {}",
+          e
+        )))
+      }
+    };
+
+    let nonce = match Nonce::from_slice(&n) {
+      Some(v) => v,
+      None => {
+        return Err(CryptoError::Decryption(
+          "invalid decryption nonce".to_string(),
+        ))
+      }
+    };
+
+    let decoded = match secretbox::open(&b64decoded_ciphertext, &nonce, &key) {
+      Ok(v) => v,
+      Err(e) => return Err(CryptoError::Decryption(format!("{:?}", e))),
+    };
+
+    Ok(decoded)
   }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use rand::OsRng;
 
   #[test]
   fn encrypt_decrypt_bytes() -> Result<(), CryptoError> {
-    let cryptor: AESCryptor = AESCryptor::new();
-    let content = String::from("foobarbaz💖");
-    let key = cryptor.gen_random_key();
-    let mut iv: [u8; 16] = [0; 16];
-    let mut rng = OsRng::new().ok().unwrap();
-    rng.fill_bytes(&mut iv);
+    let key = "my-secret-key";
+    let plaintext = b"some data to encypt";
 
-    let encrypted = cryptor.encrypt(content.as_bytes(), &key.0, &iv)?;
-    let decrypted = cryptor.decrypt(encrypted.as_slice(), &key.0, &iv)?;
+    let cryptor = AESCryptor::new();
 
-    assert_eq!(content, String::from_utf8(decrypted).unwrap());
+    let encrypted_box = cryptor.encrypt(plaintext, key.as_bytes())?;
+    let decrypted = cryptor.decrypt(
+      encrypted_box.b64_ciphertext.as_bytes(),
+      key.as_bytes(),
+      encrypted_box.b64_nonce.as_bytes(),
+    )?;
+
+    assert_eq!(plaintext, &decrypted[..]);
     Ok(())
   }
 
   #[test]
-  fn decrypt_error() {
+  #[should_panic(expected = "Invalid base46 ciphertext:")]
+  fn decrypt_plaintext_base64_decode_error() {
+    let plaintext = b"some data to encypt";
+    let key = "my-secret-key";
+    let nonce = "my-nonce";
+
     let cryptor: AESCryptor = AESCryptor::new();
-    let content = "foobarbaz💖".to_string();
 
-    let key = cryptor.gen_random_key();
-    let mut iv: [u8; 16] = [0; 16];
-    let mut rng = OsRng::new().ok().unwrap();
-    rng.fill_bytes(&mut iv);
+    cryptor
+      .decrypt(plaintext, key.as_bytes(), nonce.as_bytes())
+      .unwrap();
+  }
 
-    let decrypted = cryptor.decrypt(content.as_bytes(), &key.0, &iv).unwrap();
+  #[test]
+  #[should_panic(expected = "Invalid base46 nonce:")]
+  fn decrypt_nonce_base64_decode_error() {
+    let plaintext = base64::encode(b"some data to encypt");
+    let key = "my-secret-key";
+    let invalid_nonce = "my-nonce";
 
-    assert_ne!(decrypted, content.as_bytes());
+    let cryptor: AESCryptor = AESCryptor::new();
+
+    cryptor
+      .decrypt(
+        plaintext.as_bytes(),
+        key.as_bytes(),
+        invalid_nonce.as_bytes(),
+      )
+      .unwrap();
   }
 }

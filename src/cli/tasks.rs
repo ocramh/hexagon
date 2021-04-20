@@ -2,8 +2,7 @@ use crate::crypto::aes::aes::AESCryptor;
 use crate::crypto::aes::encryption::SymmetricEncryptor;
 use crate::crypto::rsa::keygen;
 use clap::{load_yaml, App};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
+extern crate base64;
 
 pub fn run() {
   let yaml = load_yaml!("cli.yaml");
@@ -18,7 +17,7 @@ pub fn run() {
   }
 
   if let Some(ref _matches) = matches.subcommand_matches("decrypt") {
-    println!("do asymmetric encryption");
+    return run_decrypt_cmd(matches);
   }
 }
 
@@ -54,20 +53,32 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
   match enc_type {
     "symmetric" => {
       let secret = matches.value_of("secret").unwrap();
-      let rng = rand::thread_rng();
-
-      let iv: String = rng
-        .sample_iter(&Alphanumeric)
-        .take(8)
-        .map(char::from)
-        .collect();
 
       let cyptor = AESCryptor::new();
 
-      match cyptor.encrypt(input.as_bytes(), secret.as_bytes(), iv.as_bytes()) {
-        Ok(val) => println!("{}. init vector: {}", String::from_utf8_lossy(&val), iv),
-        Err(e) => println!("==> error encypting input {}", e),
-      }
+      let encrypt_box = match cyptor.encrypt(input.as_bytes(), secret.as_bytes()) {
+        Ok(val) => val,
+        Err(e) => panic!(e),
+      };
+
+      println!(
+        "ciphertext: {}, nonce: {}",
+        &encrypt_box.b64_ciphertext, &encrypt_box.b64_nonce
+      );
+
+      let decri = match cyptor.decrypt(
+        encrypt_box.b64_ciphertext.as_bytes(),
+        secret.as_bytes(),
+        encrypt_box.b64_nonce.as_bytes(),
+      ) {
+        Ok(val) => val,
+        Err(e) => {
+          println!("{}", e);
+          panic!("some error");
+        }
+      };
+
+      println!("decripted: {}", std::str::from_utf8(&decri).unwrap());
     }
     "asymmetric" => {
       let pub_key = matches.value_of("key").unwrap();
@@ -78,4 +89,36 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
     }
     _ => println!("==> invalid encryption type. Possible values are symmetric or asymmetric"),
   }
+}
+
+fn run_decrypt_cmd(args: clap::ArgMatches) {
+  let base64_input = match args.value_of("input") {
+    Some(v) => v,
+    None => panic!("input cannot be empty"),
+  };
+
+  let decoded_input = base64::decode(base64_input).unwrap();
+
+  let matches = args.subcommand_matches("decrypt").unwrap();
+  let enc_type = matches.value_of("type").unwrap();
+
+  match enc_type {
+    "symmetric" => {
+      let secret = matches.value_of("secret").unwrap();
+      // let nonce = matches.value_of("nonce").unwrap();
+
+      let cyptor = AESCryptor::new();
+
+      match cyptor.decrypt(
+        &decoded_input,
+        secret.as_bytes(),
+        "LWVFTCe3h/fwUa0bWcG1abrW0kA6208m".as_bytes(),
+      ) {
+        Ok(val) => println!("{}", String::from_utf8(val).unwrap()),
+        Err(e) => println!("==> error decrypting input {}", e),
+      }
+    }
+    "asymmetric" => {}
+    _ => println!("==> invalid decryption type. Possible values are symmetric or asymmetric"),
+  };
 }
