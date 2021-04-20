@@ -38,16 +38,11 @@ impl SymmetricEncryptor for AESCryptor {
   }
 
   // decrypts a cipher using the encryption key and the initialization vector provided
-  fn decrypt(
-    &self,
-    ciphertext: &[u8],
-    secret: &[u8],
-    nonce: &[u8],
-  ) -> Result<Vec<u8>, CryptoError> {
+  fn decrypt(&self, cipherbox: &CipherBox, secret: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let keyhash = hash::sha256::hash(&secret);
     let key = secretbox::Key(keyhash.0);
 
-    let b64decoded_ciphertext = match base64::decode(ciphertext) {
+    let ciphertext = match base64::decode(&cipherbox.b64_ciphertext) {
       Ok(v) => v,
       Err(e) => {
         return Err(CryptoError::Decryption(format!(
@@ -57,7 +52,7 @@ impl SymmetricEncryptor for AESCryptor {
       }
     };
 
-    let n = match base64::decode(nonce) {
+    let n = match base64::decode(&cipherbox.b64_nonce) {
       Ok(v) => v,
       Err(e) => {
         return Err(CryptoError::Decryption(format!(
@@ -76,7 +71,7 @@ impl SymmetricEncryptor for AESCryptor {
       }
     };
 
-    let decoded = match secretbox::open(&b64decoded_ciphertext, &nonce, &key) {
+    let decoded = match secretbox::open(&ciphertext, &nonce, &key) {
       Ok(v) => v,
       Err(e) => return Err(CryptoError::Decryption(format!("{:?}", e))),
     };
@@ -90,18 +85,14 @@ mod tests {
   use super::*;
 
   #[test]
-  fn encrypt_decrypt_bytes() -> Result<(), CryptoError> {
+  fn encrypt_decrypt_ok() -> Result<(), CryptoError> {
     let key = "my-secret-key";
     let plaintext = b"some data to encypt";
 
     let cryptor = AESCryptor::new();
 
     let encrypted_box = cryptor.encrypt(plaintext, key.as_bytes())?;
-    let decrypted = cryptor.decrypt(
-      encrypted_box.b64_ciphertext.as_bytes(),
-      key.as_bytes(),
-      encrypted_box.b64_nonce.as_bytes(),
-    )?;
+    let decrypted = cryptor.decrypt(&encrypted_box, key.as_bytes())?;
 
     assert_eq!(plaintext, &decrypted[..]);
     Ok(())
@@ -110,14 +101,20 @@ mod tests {
   #[test]
   #[should_panic(expected = "Invalid base46 ciphertext:")]
   fn decrypt_plaintext_base64_decode_error() {
-    let plaintext = b"some data to encypt";
+    let plaintext = "some data to encypt".to_string();
     let key = "my-secret-key";
-    let nonce = "my-nonce";
+    let nonce = "my-nonce".to_string();
 
     let cryptor: AESCryptor = AESCryptor::new();
 
     cryptor
-      .decrypt(plaintext, key.as_bytes(), nonce.as_bytes())
+      .decrypt(
+        &CipherBox {
+          b64_ciphertext: plaintext,
+          b64_nonce: nonce,
+        },
+        key.as_bytes(),
+      )
       .unwrap();
   }
 
@@ -126,15 +123,17 @@ mod tests {
   fn decrypt_nonce_base64_decode_error() {
     let plaintext = base64::encode(b"some data to encypt");
     let key = "my-secret-key";
-    let invalid_nonce = "my-nonce";
+    let nonce = "my-nonce".to_string();
 
     let cryptor: AESCryptor = AESCryptor::new();
 
     cryptor
       .decrypt(
-        plaintext.as_bytes(),
+        &CipherBox {
+          b64_ciphertext: plaintext,
+          b64_nonce: nonce,
+        },
         key.as_bytes(),
-        invalid_nonce.as_bytes(),
       )
       .unwrap();
   }

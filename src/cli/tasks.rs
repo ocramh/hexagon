@@ -1,5 +1,5 @@
 use crate::crypto::aes::aes::AESCryptor;
-use crate::crypto::aes::encryption::SymmetricEncryptor;
+use crate::crypto::aes::encryption::{CipherBox, SymmetricEncryptor};
 use crate::crypto::rsa::keygen;
 use clap::{load_yaml, App};
 extern crate base64;
@@ -66,11 +66,7 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
         &encrypt_box.b64_ciphertext, &encrypt_box.b64_nonce
       );
 
-      let decri = match cyptor.decrypt(
-        encrypt_box.b64_ciphertext.as_bytes(),
-        secret.as_bytes(),
-        encrypt_box.b64_nonce.as_bytes(),
-      ) {
+      let decri = match cyptor.decrypt(&encrypt_box, secret.as_bytes()) {
         Ok(val) => val,
         Err(e) => {
           println!("{}", e);
@@ -92,12 +88,15 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
 }
 
 fn run_decrypt_cmd(args: clap::ArgMatches) {
-  let base64_input = match args.value_of("input") {
+  let base64_input = match args.value_of("ciphertext") {
     Some(v) => v,
     None => panic!("input cannot be empty"),
   };
 
-  let decoded_input = base64::decode(base64_input).unwrap();
+  let base64_nonce = match args.value_of("nonce") {
+    Some(v) => v,
+    None => panic!("input cannot be empty"),
+  };
 
   let matches = args.subcommand_matches("decrypt").unwrap();
   let enc_type = matches.value_of("type").unwrap();
@@ -110,9 +109,11 @@ fn run_decrypt_cmd(args: clap::ArgMatches) {
       let cyptor = AESCryptor::new();
 
       match cyptor.decrypt(
-        &decoded_input,
+        &CipherBox {
+          b64_ciphertext: base64_input.to_string(),
+          b64_nonce: base64_nonce.to_string(),
+        },
         secret.as_bytes(),
-        "LWVFTCe3h/fwUa0bWcG1abrW0kA6208m".as_bytes(),
       ) {
         Ok(val) => println!("{}", String::from_utf8(val).unwrap()),
         Err(e) => println!("==> error decrypting input {}", e),
