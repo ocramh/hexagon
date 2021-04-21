@@ -1,6 +1,6 @@
 # Hexagon
 
-Hexagon is a Command Line Tool written in Rust that can be used performs symmetric and asymmetric encryption tasks.
+Hexagon is a Command Line Tool written in Rust that can be used to perform symmetric and asymmetric encryption tasks.
 
 Internally the library provides conveninet wrappers around [sodiumoxide](https://docs.rs/sodiumoxide/0.2.6/sodiumoxide/) and [openssl](https://docs.rs/openssl/0.10.33/openssl/) for managing the creation of public/private key-pairs as well as symmetric and asymmetric encryption and decryption.
 Currently symmetric encryption is implemented by using [XSalsa20Poly1305](https://en.wikipedia.org/wiki/Authenticated_encryption) while [asymmetric encryption](https://en.wikipedia.org/wiki/Public-key_cryptography) is achived using [RSA](https://en.wikipedia.org/wiki/RSA_(cryptosystem)).
