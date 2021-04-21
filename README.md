@@ -11,7 +11,7 @@ This project is an exploration of the main concepts behind cryptographic systems
 ## Status
 [![Actions Status](https://github.com/ocramh/hexagon/workflows/Build%20and%20test/badge.svg)](https://github.com/ocramh/hexagon/actions)
 
-In prgress
+In progress
 - [x] XSalsa20Poly1305 based symmetric encryption and decryption
 - [x] XSalsa20Poly1305 encryption and decryption unit testing
 - [x] RSA encryption and decryption implementation
