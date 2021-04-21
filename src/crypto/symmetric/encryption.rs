@@ -1,13 +1,13 @@
-use crate::crypto::aes::key::Key;
 use crate::crypto::errors::CryptoError;
+use crate::crypto::symmetric::key::Key;
 
 pub struct CipherBox {
   pub b64_ciphertext: String,
   pub b64_nonce: String,
 }
 
-// SymmetricEncryptor defines a set of methods for generating a cypher (key), encrypt
-// and decrypt bytes of data
+// SymmetricEncryptor defines a set of methods for generating a secret random key
+// and the encryption and decryption of data using a shared secret key and a nonce
 pub trait SymmetricEncryptor {
   // generates a 32 bytes random key
   fn gen_random_key(&self) -> Key;

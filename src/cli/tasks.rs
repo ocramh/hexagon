@@ -1,6 +1,6 @@
-use crate::crypto::aes::aes::AESCryptor;
-use crate::crypto::aes::encryption::{CipherBox, SymmetricEncryptor};
 use crate::crypto::rsa::keygen;
+use crate::crypto::symmetric::encryption::{CipherBox, SymmetricEncryptor};
+use crate::crypto::symmetric::xsalsapoly::XsalsaPoly;
 use clap::{load_yaml, App};
 extern crate base64;
 
@@ -53,9 +53,7 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
   match enc_type {
     "symmetric" => {
       let secret = matches.value_of("secret").unwrap();
-
-      let cyptor = AESCryptor::new();
-
+      let cyptor = XsalsaPoly::new();
       let encrypt_box = match cyptor.encrypt(input.as_bytes(), secret.as_bytes()) {
         Ok(val) => val,
         Err(e) => panic!(e),
@@ -65,16 +63,6 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
         "ciphertext: {}, nonce: {}",
         &encrypt_box.b64_ciphertext, &encrypt_box.b64_nonce
       );
-
-      let decri = match cyptor.decrypt(&encrypt_box, secret.as_bytes()) {
-        Ok(val) => val,
-        Err(e) => {
-          println!("{}", e);
-          panic!("some error");
-        }
-      };
-
-      println!("decripted: {}", std::str::from_utf8(&decri).unwrap());
     }
     "asymmetric" => {
       let pub_key = matches.value_of("key").unwrap();
@@ -88,29 +76,26 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
 }
 
 fn run_decrypt_cmd(args: clap::ArgMatches) {
-  let base64_input = match args.value_of("ciphertext") {
-    Some(v) => v,
-    None => panic!("input cannot be empty"),
-  };
-
-  let base64_nonce = match args.value_of("nonce") {
-    Some(v) => v,
-    None => panic!("input cannot be empty"),
-  };
-
   let matches = args.subcommand_matches("decrypt").unwrap();
   let enc_type = matches.value_of("type").unwrap();
 
   match enc_type {
     "symmetric" => {
-      let secret = matches.value_of("secret").unwrap();
-      // let nonce = matches.value_of("nonce").unwrap();
+      let base64_cipher = match args.value_of("ciphertext") {
+        Some(v) => v,
+        None => panic!("input cannot be empty"),
+      };
 
-      let cyptor = AESCryptor::new();
+      let base64_nonce = match args.value_of("nonce") {
+        Some(v) => v,
+        None => panic!("input cannot be empty"),
+      };
+      let secret = matches.value_of("secret").unwrap();
+      let cyptor = XsalsaPoly::new();
 
       match cyptor.decrypt(
         &CipherBox {
-          b64_ciphertext: base64_input.to_string(),
+          b64_ciphertext: base64_cipher.to_string(),
           b64_nonce: base64_nonce.to_string(),
         },
         secret.as_bytes(),
@@ -119,7 +104,7 @@ fn run_decrypt_cmd(args: clap::ArgMatches) {
         Err(e) => println!("==> error decrypting input {}", e),
       }
     }
-    "asymmetric" => {}
+    "asymmetric" => println!("TO DO"),
     _ => println!("==> invalid decryption type. Possible values are symmetric or asymmetric"),
   };
 }

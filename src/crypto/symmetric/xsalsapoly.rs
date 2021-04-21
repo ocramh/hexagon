@@ -1,28 +1,29 @@
 extern crate rand;
 
-use crate::crypto::aes::encryption::{CipherBox, SymmetricEncryptor};
-use crate::crypto::aes::key::Key;
 use crate::crypto::errors::CryptoError;
+use crate::crypto::symmetric::encryption::{CipherBox, SymmetricEncryptor};
+use crate::crypto::symmetric::key::Key;
 use rand::{thread_rng, Rng};
 use sodiumoxide::crypto::hash;
 use sodiumoxide::crypto::secretbox;
 use sodiumoxide::crypto::secretbox::xsalsa20poly1305::Nonce;
 
-pub struct AESCryptor {}
+// XsalsaPoly is an implementation of the SymmetricEncryptor based on the
+// XSalsa20Poly1305 authenticated encryption
+pub struct XsalsaPoly {}
 
-impl AESCryptor {
-  pub fn new() -> AESCryptor {
-    AESCryptor {}
+impl XsalsaPoly {
+  pub fn new() -> XsalsaPoly {
+    XsalsaPoly {}
   }
 }
 
-impl SymmetricEncryptor for AESCryptor {
+impl SymmetricEncryptor for XsalsaPoly {
   fn gen_random_key(&self) -> Key {
     let mut rng = thread_rng();
     Key(rng.gen())
   }
 
-  // encrypts content using an AES-CTR cipher
   fn encrypt(&self, plaintext: &[u8], secret: &[u8]) -> Result<CipherBox, CryptoError> {
     let keyhash = hash::sha256::hash(&secret);
 
@@ -37,7 +38,6 @@ impl SymmetricEncryptor for AESCryptor {
     })
   }
 
-  // decrypts a cipher using the encryption key and the initialization vector provided
   fn decrypt(&self, cipherbox: &CipherBox, secret: &[u8]) -> Result<Vec<u8>, CryptoError> {
     let keyhash = hash::sha256::hash(&secret);
     let key = secretbox::Key(keyhash.0);
@@ -89,7 +89,7 @@ mod tests {
     let key = "my-secret-key";
     let plaintext = b"some data to encypt";
 
-    let cryptor = AESCryptor::new();
+    let cryptor = XsalsaPoly::new();
 
     let encrypted_box = cryptor.encrypt(plaintext, key.as_bytes())?;
     let decrypted = cryptor.decrypt(&encrypted_box, key.as_bytes())?;
@@ -105,7 +105,7 @@ mod tests {
     let key = "my-secret-key";
     let nonce = "my-nonce".to_string();
 
-    let cryptor: AESCryptor = AESCryptor::new();
+    let cryptor: XsalsaPoly = XsalsaPoly::new();
 
     cryptor
       .decrypt(
@@ -125,7 +125,7 @@ mod tests {
     let key = "my-secret-key";
     let nonce = "my-nonce".to_string();
 
-    let cryptor: AESCryptor = AESCryptor::new();
+    let cryptor: XsalsaPoly = XsalsaPoly::new();
 
     cryptor
       .decrypt(

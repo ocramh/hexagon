@@ -79,10 +79,10 @@ impl KeyGen {
       .public_key_to_pem()
       .map_err(|source| CryptoError::OpenSSLError { source })?;
 
-    // error will automatically be wrpeed into CryptoError::IoError
+    // error will automatically be wrapped into CryptoError::IoError
     let mut priv_file = File::create(&save_to)?;
 
-    // error will automatically be wrpeed into CryptoError::IoError
+    // error will automatically be wrapped into CryptoError::IoError
     let mut pub_file = File::create(&save_to.with_extension("pub"))?;
 
     priv_file
