@@ -1,7 +1,10 @@
+use crate::crypto::rsa::cryptor::RSACryptor;
 use crate::crypto::rsa::keygen;
 use crate::crypto::symmetric::encryption::{CipherBox, SymmetricEncryptor};
 use crate::crypto::symmetric::xsalsapoly::XsalsaPoly;
 use clap::{load_yaml, App};
+use std::fs;
+use std::path::Path;
 extern crate base64;
 
 pub fn run() {
@@ -65,11 +68,17 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
       );
     }
     "asymmetric" => {
-      let pub_key = matches.value_of("key").unwrap();
-      println!(
-        "==> do asymmetric encryption. input: {:?}, secret: {}, output: {}",
-        input, pub_key, enc_dest
-      );
+      let key_path = matches.value_of("key").unwrap();
+      let key_content = fs::read(Path::new(key_path)).unwrap();
+
+      let cryptor = RSACryptor::new_with_keys(key_content).unwrap();
+
+      let res = match cryptor.encrypt(input.as_bytes()) {
+        Ok(val) => val,
+        Err(e) => panic!(e),
+      };
+
+      println!("{:?}", res);
     }
     _ => println!("==> invalid encryption type. Possible values are symmetric or asymmetric"),
   }
