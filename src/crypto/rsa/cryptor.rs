@@ -64,10 +64,12 @@ impl RSACryptor {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::crypto::rsa::keygen::{KeyGen, KeySize};
+
   #[test]
-  fn encrypt_decrypt_bytes() -> Result<(), CryptoError> {
-    let rsa_keygen = KeyGen {};
-    let rsa_cyptor = RSACryptor::new(&rsa_keygen).unwrap();
+  fn encrypt_decrypt_with_new_key() -> Result<(), CryptoError> {
+    let keygen = KeyGen {};
+    let rsa_cyptor = RSACryptor::new(&keygen).unwrap();
     let content = String::from("foobarbaz💖");
 
     let encrypted = rsa_cyptor.encrypt(&content.as_bytes()).unwrap();
@@ -80,17 +82,28 @@ mod tests {
     Ok(())
   }
 
-  //   #[test]
-  //   fn new_with_keys_error() -> BoxResult<()> {
-  //     let privk = std::vec::Vec::new();
-  //     match RSACryptor::new_with_keys(privk) {
-  //       Ok(_) => assert!(
-  //         false,
-  //         "creating RSA keys from an empty vector shouldn't work"
-  //       ),
-  //       Err(_) => assert!(true),
-  //     }
+  #[test]
+  fn encrypt_decrypt_with_existing_key() -> Result<(), CryptoError> {
+    let keygen = KeyGen::new();
+    let key = keygen.gen_keypair(Some(KeySize::S2048)).unwrap();
+    let pem = key.rsa.private_key_to_pem().unwrap();
+    let rsa_cyptor = RSACryptor::new_with_keys(pem).unwrap();
 
-  //     Ok(())
-  //   }
+    let content = String::from("foobarbaz💖");
+    let encrypted = rsa_cyptor.encrypt(&content.as_bytes()).unwrap();
+
+    let mut decrypted = rsa_cyptor.decrypt(&encrypted).unwrap();
+    decrypted.truncate(content.len());
+
+    assert_eq!(content.as_bytes(), decrypted.as_slice());
+
+    Ok(())
+  }
+
+  #[test]
+  #[should_panic(expected = "error generating private key from pem")]
+  fn new_with_keys_error() {
+    let privk = std::vec::Vec::new();
+    RSACryptor::new_with_keys(privk).unwrap();
+  }
 }
