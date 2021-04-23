@@ -1,7 +1,9 @@
 extern crate openssl;
 
 use crate::crypto::errors::CryptoError;
+use openssl::pkey::PKey;
 use openssl::pkey::Private;
+use openssl::pkey::Public;
 use openssl::rsa::Rsa;
 use std::fs::File;
 use std::io::prelude::*;
@@ -33,8 +35,11 @@ impl KeySize {
   }
 }
 
+pub type PrivateKey = Rsa<Private>;
+pub type PublicKey = Rsa<Public>;
 pub struct KeyPair {
-  pub rsa: Rsa<Private>,
+  pub private: PrivateKey,
+  pub public: PublicKey,
 }
 
 pub struct KeyGen {}
@@ -51,7 +56,12 @@ impl KeyGen {
     };
 
     let rsa = Rsa::generate(keysize as u32)?;
-    Ok(KeyPair { rsa })
+    let pkey = PKey::from_rsa(rsa).unwrap();
+
+    Ok(KeyPair {
+      private: rsa,
+      public: rsa,
+    });
   }
 
   #[allow(dead_code)]

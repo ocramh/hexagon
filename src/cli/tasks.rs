@@ -1,5 +1,5 @@
-use crate::crypto::rsa::cryptor::RSACryptor;
-use crate::crypto::rsa::keygen;
+use crate::crypto::asymmetric::keygen;
+use crate::crypto::asymmetric::rsa::RSACryptor;
 use crate::crypto::symmetric::encryption::{CipherBox, SymmetricEncryptor};
 use crate::crypto::symmetric::xsalsapoly::XsalsaPoly;
 use clap::{load_yaml, App};
