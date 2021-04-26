@@ -1,7 +1,6 @@
 extern crate openssl;
 
 use crate::crypto::errors::CryptoError;
-use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::pkey::Public;
 use openssl::rsa::Rsa;
@@ -56,12 +55,14 @@ impl KeyGen {
     };
 
     let rsa = Rsa::generate(keysize as u32)?;
-    let pkey = PKey::from_rsa(rsa).unwrap();
+    let modulo = rsa.n().to_owned().unwrap();
+    let exponent = rsa.e().to_owned().unwrap();
+    let derived_pubkey = Rsa::from_public_components(modulo, exponent).unwrap();
 
     Ok(KeyPair {
       private: rsa,
-      public: rsa,
-    });
+      public: derived_pubkey,
+    })
   }
 
   #[allow(dead_code)]
