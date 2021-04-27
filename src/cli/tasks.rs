@@ -1,7 +1,12 @@
-use crate::crypto::rsa::keygen;
+use crate::crypto::asymmetric::encryption::AsymmetricEncryptor;
+use crate::crypto::asymmetric::keygen;
+use crate::crypto::asymmetric::rsa::RSACryptor;
 use crate::crypto::symmetric::encryption::{CipherBox, SymmetricEncryptor};
 use crate::crypto::symmetric::xsalsapoly::XsalsaPoly;
 use clap::{load_yaml, App};
+use openssl::rsa::Rsa;
+use std::fs;
+use std::path::Path;
 extern crate base64;
 
 pub fn run() {
@@ -30,7 +35,7 @@ fn run_keygen_cmd(args: clap::ArgMatches) {
   let keygen = keygen::KeyGen::new();
   let keypair = keygen.gen_keypair(Some(keysize)).unwrap();
 
-  match keygen.save_keys_to_file(&keypair.rsa, dest) {
+  match keygen.save_keys_to_file(&keypair.private, dest) {
     Ok(_) => println!(
       "==> key pair {argument} and {argument}.pub saved at {dest}",
       argument = keygen::DEFAULT_KEY_NAME,
@@ -53,8 +58,8 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
   match enc_type {
     "symmetric" => {
       let secret = matches.value_of("secret").unwrap();
-      let cyptor = XsalsaPoly::new();
-      let encrypt_box = match cyptor.encrypt(input.as_bytes(), secret.as_bytes()) {
+      let cryptor = XsalsaPoly::new();
+      let encrypt_box = match cryptor.encrypt(input.as_bytes(), secret.as_bytes()) {
         Ok(val) => val,
         Err(e) => panic!(e),
       };
@@ -65,11 +70,18 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
       );
     }
     "asymmetric" => {
-      let pub_key = matches.value_of("key").unwrap();
-      println!(
-        "==> do asymmetric encryption. input: {:?}, secret: {}, output: {}",
-        input, pub_key, enc_dest
-      );
+      let key_path = matches.value_of("key").unwrap();
+      let key_content = fs::read(Path::new(key_path)).unwrap();
+
+      let cryptor = RSACryptor::new(keygen::KeyGen::new());
+      let public_key = Rsa::public_key_from_pem(&key_content).unwrap();
+
+      let res = match cryptor.encrypt(input.as_bytes(), &public_key) {
+        Ok(val) => val,
+        Err(e) => panic!(e),
+      };
+
+      println!("{:?}", res);
     }
     _ => println!("==> invalid encryption type. Possible values are symmetric or asymmetric"),
   }
