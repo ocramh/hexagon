@@ -10,7 +10,6 @@ pub struct RSACryptor {
 }
 
 impl RSACryptor {
-  #[allow(dead_code)]
   pub fn new(k: KeyGen) -> RSACryptor {
     RSACryptor { keygen: k }
   }
@@ -43,6 +42,13 @@ impl AsymmetricEncryptor for RSACryptor {
   fn decrypt(&self, ciphertext: &[u8], private_key: &PrivateKey) -> Result<Vec<u8>, CryptoError> {
     let mut dest_buffer: Vec<u8> = vec![0; private_key.size() as usize];
 
+    if ciphertext.len() > dest_buffer.len() {
+      return Err(CryptoError::Encryption(format!(
+        "ciphertext size cannot exceed {} bytes",
+        dest_buffer.len()
+      )));
+    }
+
     private_key.private_decrypt(ciphertext, &mut dest_buffer, Padding::PKCS1)?;
 
     Ok(dest_buffer)
@@ -55,23 +61,93 @@ mod tests {
   use crate::crypto::asymmetric::keygen::{KeyGen, KeySize};
 
   #[test]
-  fn rsa_encrypt_and_decrypt_with_new_key() -> Result<(), CryptoError> {
+  fn rsa_encrypt_and_decrypt_with_1024_key() -> Result<(), CryptoError> {
     let keygen = KeyGen {};
     let rsa_cyptor = RSACryptor::new(keygen);
-    let content = String::from("foobarbaz💖");
+    let plaintext = String::from("foobarbaz💖");
 
     let keys = rsa_cyptor.gen_keypair(KeySize::S2048).unwrap();
+    let key_size = keys.public.size() as usize;
 
     let encrypted = rsa_cyptor
-      .encrypt(&content.as_bytes(), &keys.public)
+      .encrypt(&plaintext.as_bytes(), &keys.public)
       .unwrap();
+    assert_eq!(key_size, encrypted.len());
 
     let mut decrypted = rsa_cyptor.decrypt(&encrypted, &keys.private).unwrap();
-    decrypted.truncate(content.len());
+    decrypted.truncate(plaintext.len());
 
-    assert_eq!(content.as_bytes(), decrypted.as_slice());
+    assert_eq!(plaintext.as_bytes(), decrypted.as_slice());
 
     Ok(())
+  }
+
+  #[test]
+  fn rsa_encrypt_and_decrypt_with_2048_key() -> Result<(), CryptoError> {
+    let keygen = KeyGen {};
+    let rsa_cyptor = RSACryptor::new(keygen);
+    let plaintext = String::from("foobarbaz💖");
+
+    let keys = rsa_cyptor.gen_keypair(KeySize::S2048).unwrap();
+    let key_size = keys.public.size() as usize;
+
+    let encrypted = rsa_cyptor
+      .encrypt(&plaintext.as_bytes(), &keys.public)
+      .unwrap();
+    assert_eq!(key_size, encrypted.len());
+
+    let mut decrypted = rsa_cyptor.decrypt(&encrypted, &keys.private).unwrap();
+    decrypted.truncate(plaintext.len());
+
+    assert_eq!(plaintext.as_bytes(), decrypted.as_slice());
+
+    Ok(())
+  }
+
+  #[test]
+  fn rsa_encrypt_and_decrypt_with_4096_key() -> Result<(), CryptoError> {
+    let keygen = KeyGen {};
+    let rsa_cyptor = RSACryptor::new(keygen);
+    let plaintext = String::from("foobarbaz💖");
+
+    let keys = rsa_cyptor.gen_keypair(KeySize::S4096).unwrap();
+    let key_size = keys.public.size() as usize;
+
+    let encrypted = rsa_cyptor
+      .encrypt(&plaintext.as_bytes(), &keys.public)
+      .unwrap();
+    assert_eq!(key_size, encrypted.len());
+
+    let mut decrypted = rsa_cyptor.decrypt(&encrypted, &keys.private).unwrap();
+    decrypted.truncate(plaintext.len());
+
+    assert_eq!(plaintext.as_bytes(), decrypted.as_slice());
+
+    Ok(())
+  }
+
+  #[test]
+  #[should_panic(expected = "plaintext size cannot exceed 128 bytes")]
+  fn rsa_encrypt_input_lenght_error() {
+    let keygen = KeyGen {};
+    let rsa_cyptor = RSACryptor::new(keygen);
+    let plaintext: [u8; 2048] = [0; 2048];
+
+    let keys = rsa_cyptor.gen_keypair(KeySize::S1024).unwrap();
+
+    rsa_cyptor.encrypt(&plaintext, &keys.public).unwrap();
+  }
+
+  #[test]
+  #[should_panic(expected = "ciphertext size cannot exceed 128 bytes")]
+  fn rsa_decrypt_cipher_lenght_error() {
+    let keygen = KeyGen {};
+    let rsa_cyptor = RSACryptor::new(keygen);
+    let ciphertext: [u8; 2048] = [0; 2048];
+
+    let keys = rsa_cyptor.gen_keypair(KeySize::S1024).unwrap();
+
+    rsa_cyptor.decrypt(&ciphertext, &keys.private).unwrap();
   }
 
   #[test]
@@ -79,13 +155,13 @@ mod tests {
   fn rsa_encrypt_and_decrypt_key_error() {
     let keygen = KeyGen {};
     let rsa_cyptor = RSACryptor::new(keygen);
-    let content = String::from("foobarbaz💖");
+    let plaintext = String::from("foobarbaz💖");
 
     let keys = rsa_cyptor.gen_keypair(KeySize::S2048).unwrap();
     let keys2 = rsa_cyptor.gen_keypair(KeySize::S2048).unwrap();
 
     let encrypted = rsa_cyptor
-      .encrypt(&content.as_bytes(), &keys.public)
+      .encrypt(&plaintext.as_bytes(), &keys.public)
       .unwrap();
 
     rsa_cyptor.decrypt(&encrypted, &keys2.private).unwrap();
