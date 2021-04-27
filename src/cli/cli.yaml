@@ -1,4 +1,7 @@
-name: HEXAGON
+name: |
+  ___
+  /  \ HEXAGON
+  \__/
 version: "0.0.1"
 author: Marco <marco@sygma.io>
 about: Cryptography Command Line Tool
