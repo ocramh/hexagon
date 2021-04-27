@@ -55,9 +55,9 @@ impl KeyGen {
     };
 
     let rsa = Rsa::generate(keysize as u32)?;
-    let modulo = rsa.n().to_owned().unwrap();
-    let exponent = rsa.e().to_owned().unwrap();
-    let derived_pubkey = Rsa::from_public_components(modulo, exponent).unwrap();
+    let modulo = rsa.n().to_owned()?;
+    let exponent = rsa.e().to_owned()?;
+    let derived_pubkey = Rsa::from_public_components(modulo, exponent)?;
 
     Ok(KeyPair {
       private: rsa,
