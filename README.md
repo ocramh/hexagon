@@ -15,11 +15,11 @@ In progress
 - [x] XSalsa20Poly1305 based symmetric encryption and decryption
 - [x] XSalsa20Poly1305 encryption and decryption unit testing
 - [x] RSA encryption and decryption implementation
-- [ ] RSA encryption and decryption implementation
+- [x] RSA encryption and decryption implementation
 - [x] RSA key public/private key generation
 - [x] CLI interface definition
 - [ ] CLI tasks implementation
-- [ ] Write decryption output to file
+- [ ] Output encryption/decryption to file
 
 ## Dependencies
 Rust v 1.36 or greater
