@@ -7,9 +7,13 @@ pub trait AsymmetricEncryptor {
   // gen_keypair generates a KeyPair
   fn gen_keypair(&self, size: KeySize) -> Result<KeyPair, CryptoError>;
 
-  // encrypt plaintext with public_key
-  fn encrypt(&self, plaintext: &[u8], public_key: &PublicKey) -> Result<Vec<u8>, CryptoError>;
+  // encrypt plaintext with public_key and returns a base64 encoded ciphertext string
+  fn encrypt(&self, plaintext: &[u8], public_key: &PublicKey) -> Result<String, CryptoError>;
 
-  // deencrypt ciphertext with private_key
-  fn decrypt(&self, ciphertext: &[u8], private_key: &PrivateKey) -> Result<Vec<u8>, CryptoError>;
+  // decrypt a base64 encoded ciphertext with the provided private_key
+  fn decrypt(
+    &self,
+    b64_ciphertext: &[u8],
+    private_key: &PrivateKey,
+  ) -> Result<Vec<u8>, CryptoError>;
 }
