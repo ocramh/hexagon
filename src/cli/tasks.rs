@@ -99,7 +99,7 @@ fn run_decrypt_cmd(args: clap::ArgMatches) {
     "symmetric" => {
       let base64_nonce = match args.value_of("nonce") {
         Some(v) => v,
-        None => panic!("input cannot be empty"),
+        None => panic!("nonce cannot be empty"),
       };
       let secret = matches.value_of("secret").unwrap();
 
@@ -134,7 +134,7 @@ fn asymmetric_decryption(ciphertext: &str, key_content: Vec<u8>) {
   let cryptor = RSACryptor::new(keygen::KeyGen::new());
   let priv_key = Rsa::private_key_from_pem(&key_content).unwrap();
 
-  match cryptor.decrypt(ciphertext.as_bytes(), &priv_key) {
+  match cryptor.decrypt(&ciphertext, &priv_key) {
     Ok(val) => println!("{}", String::from_utf8(val).unwrap()),
     Err(e) => panic!(e),
   };

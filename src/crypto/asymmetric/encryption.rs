@@ -11,9 +11,6 @@ pub trait AsymmetricEncryptor {
   fn encrypt(&self, plaintext: &[u8], public_key: &PublicKey) -> Result<String, CryptoError>;
 
   // decrypt a base64 encoded ciphertext with the provided private_key
-  fn decrypt(
-    &self,
-    b64_ciphertext: &[u8],
-    private_key: &PrivateKey,
-  ) -> Result<Vec<u8>, CryptoError>;
+  fn decrypt(&self, b64_ciphertext: &str, private_key: &PrivateKey)
+    -> Result<Vec<u8>, CryptoError>;
 }
