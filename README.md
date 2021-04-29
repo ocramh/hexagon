@@ -18,7 +18,7 @@ In progress
 - [x] RSA encryption and decryption implementation
 - [x] RSA key public/private key generation
 - [x] CLI interface definition
-- [ ] CLI tasks implementation
+- [x] CLI tasks implementation
 - [ ] Output encryption/decryption to file
 
 ## Dependencies
