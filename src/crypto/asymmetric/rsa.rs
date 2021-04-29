@@ -23,7 +23,7 @@ impl AsymmetricEncryptor for RSACryptor {
 
   // encrypt plaintext with public_key. If plaintext is larger than public_key size
   // it will return an error
-  fn encrypt(&self, plaintext: &[u8], public_key: &PublicKey) -> Result<Vec<u8>, CryptoError> {
+  fn encrypt(&self, plaintext: &[u8], public_key: &PublicKey) -> Result<String, CryptoError> {
     let mut dest_buffer: Vec<u8> = vec![0; public_key.size() as usize];
 
     if plaintext.len() > dest_buffer.len() {
@@ -35,21 +35,29 @@ impl AsymmetricEncryptor for RSACryptor {
 
     public_key.public_encrypt(plaintext, &mut dest_buffer, Padding::PKCS1)?;
 
-    Ok(dest_buffer)
+    Ok(base64::encode(dest_buffer))
   }
 
   // deencrypt ciphertext with private_key
-  fn decrypt(&self, ciphertext: &[u8], private_key: &PrivateKey) -> Result<Vec<u8>, CryptoError> {
+  fn decrypt(&self, ciphertext: &str, private_key: &PrivateKey) -> Result<Vec<u8>, CryptoError> {
     let mut dest_buffer: Vec<u8> = vec![0; private_key.size() as usize];
+    let from_b64 = match base64::decode(ciphertext) {
+      Ok(val) => val,
+      Err(_) => {
+        return Err(CryptoError::Decryption(
+          "invalid base64 chipertext".to_string(),
+        ))
+      }
+    };
 
-    if ciphertext.len() > dest_buffer.len() {
+    if from_b64.len() > dest_buffer.len() {
       return Err(CryptoError::Encryption(format!(
         "ciphertext size cannot exceed {} bytes",
         dest_buffer.len()
       )));
     }
 
-    private_key.private_decrypt(ciphertext, &mut dest_buffer, Padding::PKCS1)?;
+    private_key.private_decrypt(&from_b64, &mut dest_buffer, Padding::PKCS1)?;
 
     Ok(dest_buffer)
   }
@@ -67,12 +75,9 @@ mod tests {
     let plaintext = String::from("foobarbaz💖");
 
     let keys = rsa_cyptor.gen_keypair(KeySize::S2048).unwrap();
-    let key_size = keys.public.size() as usize;
-
     let encrypted = rsa_cyptor
       .encrypt(&plaintext.as_bytes(), &keys.public)
       .unwrap();
-    assert_eq!(key_size, encrypted.len());
 
     let mut decrypted = rsa_cyptor.decrypt(&encrypted, &keys.private).unwrap();
     decrypted.truncate(plaintext.len());
@@ -89,12 +94,9 @@ mod tests {
     let plaintext = String::from("foobarbaz💖");
 
     let keys = rsa_cyptor.gen_keypair(KeySize::S2048).unwrap();
-    let key_size = keys.public.size() as usize;
-
     let encrypted = rsa_cyptor
       .encrypt(&plaintext.as_bytes(), &keys.public)
       .unwrap();
-    assert_eq!(key_size, encrypted.len());
 
     let mut decrypted = rsa_cyptor.decrypt(&encrypted, &keys.private).unwrap();
     decrypted.truncate(plaintext.len());
@@ -111,12 +113,9 @@ mod tests {
     let plaintext = String::from("foobarbaz💖");
 
     let keys = rsa_cyptor.gen_keypair(KeySize::S4096).unwrap();
-    let key_size = keys.public.size() as usize;
-
     let encrypted = rsa_cyptor
       .encrypt(&plaintext.as_bytes(), &keys.public)
       .unwrap();
-    assert_eq!(key_size, encrypted.len());
 
     let mut decrypted = rsa_cyptor.decrypt(&encrypted, &keys.private).unwrap();
     decrypted.truncate(plaintext.len());
@@ -147,7 +146,9 @@ mod tests {
 
     let keys = rsa_cyptor.gen_keypair(KeySize::S1024).unwrap();
 
-    rsa_cyptor.decrypt(&ciphertext, &keys.private).unwrap();
+    rsa_cyptor
+      .decrypt(&base64::encode(ciphertext), &keys.private)
+      .unwrap();
   }
 
   #[test]

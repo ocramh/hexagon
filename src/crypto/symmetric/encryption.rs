@@ -13,7 +13,7 @@ pub trait SymmetricEncryptor {
   fn gen_random_key(&self) -> Key;
 
   // encrypt plaintext with secret key to base 64 encoded ciphertext and nonce
-  fn encrypt(&self, content: &[u8], key: &[u8]) -> Result<CipherBox, CryptoError>;
+  fn encrypt(&self, plaintext: &[u8], key: &[u8]) -> Result<CipherBox, CryptoError>;
 
   // decrypt base 64 encoded ciphertext using nonce and secret key
   fn decrypt(&self, cipherbox: &CipherBox, key: &[u8]) -> Result<Vec<u8>, CryptoError>;
