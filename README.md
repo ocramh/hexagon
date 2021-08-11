@@ -25,12 +25,32 @@ In progress
 Rust v 1.36 or greater
 
 ## Usage
-Build the project from the root directory with cargo
+Build the project from the root directory with cargo.
+The generated output will be in the `/target/release` folder
 ```
-cargo build
+cargo build --release
 ```
 
-Execute the compiled debug executable and see the available CLI commands
+Once the package has been compiled the executable will expose the following CLI interface
 ```
- ./target/debug/hexagon -h
+ ./target/release/hexagon -h
+
+ USAGE:
+    hexagon [OPTIONS] [input] [SUBCOMMAND]
+
+ARGS:
+    <input>    sets the input to work with
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+    -v <verbose>...        sets the level of verbosity
+
+SUBCOMMANDS:
+    decrypt    decrypts the input
+    encrypt    encrypts the input
+    help       Prints this message or the help of the given subcommand(s)
+    keygen     generates public/private key pair
 ```
