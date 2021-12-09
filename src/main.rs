@@ -3,9 +3,9 @@ extern crate rand;
 use anyhow::Result;
 mod cli;
 mod crypto;
-use crate::cli::tasks;
+use crate::cli::cli as hexagon_cli;
 
 fn main() -> Result<()> {
-  tasks::run();
+  hexagon_cli::run();
   Ok(())
 }

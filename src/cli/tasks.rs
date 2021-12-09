@@ -3,62 +3,13 @@ use crate::crypto::asymmetric::keygen;
 use crate::crypto::asymmetric::rsa::RSACryptor;
 use crate::crypto::symmetric::encryption::{CipherBox, SymmetricEncryptor};
 use crate::crypto::symmetric::xsalsapoly::XsalsaPoly;
-use clap::{load_yaml, App};
 use openssl::rsa::Rsa;
 use std::fs;
 use std::path::Path;
 extern crate base64;
+extern crate clap;
 
-pub fn run() {
-  let yaml = load_yaml!("cli.yaml");
-  let matches = App::from(yaml).get_matches();
-
-  if let Some(ref _matches) = matches.subcommand_matches("keygen") {
-    return run_keygen_cmd(matches);
-  }
-
-  if let Some(ref _matches) = matches.subcommand_matches("encrypt") {
-    return run_encrypt_cmd(matches);
-  }
-
-  if let Some(ref _matches) = matches.subcommand_matches("decrypt") {
-    return run_decrypt_cmd(matches);
-  }
-}
-
-fn run_keygen_cmd(args: clap::ArgMatches) {
-  let matches = args.subcommand_matches("keygen").unwrap();
-  let size = matches.value_of("size").unwrap();
-  let dest = matches.value_of("destination").unwrap();
-
-  let keysize = match keygen::KeySize::keysize_from_str(size) {
-    Ok(v) => v,
-    Err(e) => {
-      eprintln!("{}", e);
-      std::process::exit(1);
-    }
-  };
-
-  let keygen = keygen::KeyGen::new();
-  let keypair = match keygen.gen_keypair(Some(keysize)) {
-    Ok(v) => v,
-    Err(e) => {
-      eprintln!("{}", e);
-      std::process::exit(1);
-    }
-  };
-
-  match keygen.save_keys_to_file(&keypair.private, dest) {
-    Ok(_) => println!(
-      "==> key pair {argument} and {argument}.pub saved at {dest}",
-      argument = keygen::DEFAULT_KEY_NAME,
-      dest = dest
-    ),
-    Err(e) => println!("==> error saving key pair {}", e),
-  }
-}
-
-fn run_encrypt_cmd(args: clap::ArgMatches) {
+pub fn run_encrypt_cmd(args: &clap::ArgMatches) {
   let input = match args.value_of("input") {
     Some(v) => v,
     None => {
@@ -67,12 +18,11 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
     }
   };
 
-  let matches = args.subcommand_matches("encrypt").unwrap();
-  let enc_type = matches.value_of("type").unwrap();
+  let enc_type = args.value_of("type").unwrap();
 
   match enc_type {
     "symmetric" => {
-      let secret = matches.value_of("secret").unwrap();
+      let secret = args.value_of("secret").unwrap();
       let cryptor = XsalsaPoly::new();
       let encrypt_box = match cryptor.encrypt(input.as_bytes(), secret.as_bytes()) {
         Ok(v) => v,
@@ -88,7 +38,7 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
       );
     }
     "asymmetric" => {
-      let key_path = matches.value_of("key").unwrap();
+      let key_path = args.value_of("key").unwrap();
       let key_content = match fs::read(Path::new(key_path)) {
         Ok(v) => v,
         Err(e) => {
@@ -120,9 +70,39 @@ fn run_encrypt_cmd(args: clap::ArgMatches) {
   }
 }
 
-fn run_decrypt_cmd(args: clap::ArgMatches) {
-  let matches = args.subcommand_matches("decrypt").unwrap();
-  let enc_type = matches.value_of("type").unwrap();
+pub fn run_keygen_cmd(args: &clap::ArgMatches) {
+  let size = args.value_of("size").unwrap();
+  let dest = args.value_of("destination").unwrap();
+
+  let keysize = match keygen::KeySize::keysize_from_str(size) {
+    Ok(v) => v,
+    Err(e) => {
+      eprintln!("{}", e);
+      std::process::exit(1);
+    }
+  };
+
+  let keygen = keygen::KeyGen::new();
+  let keypair = match keygen.gen_keypair(Some(keysize)) {
+    Ok(v) => v,
+    Err(e) => {
+      eprintln!("{}", e);
+      std::process::exit(1);
+    }
+  };
+
+  match keygen.save_keys_to_file(&keypair.private, dest) {
+    Ok(_) => println!(
+      "==> key pair {argument} and {argument}.pub saved at {dest}",
+      argument = keygen::DEFAULT_KEY_NAME,
+      dest = dest
+    ),
+    Err(e) => println!("==> error saving key pair {}", e),
+  }
+}
+
+pub fn run_decrypt_cmd(args: &clap::ArgMatches) {
+  let enc_type = args.value_of("type").unwrap();
   let input = match args.value_of("input") {
     Some(v) => v,
     None => {
@@ -140,12 +120,12 @@ fn run_decrypt_cmd(args: clap::ArgMatches) {
           std::process::exit(1);
         }
       };
-      let secret = matches.value_of("secret").unwrap();
+      let secret = args.value_of("secret").unwrap();
 
       symmetric_decryption(input, secret, base64_nonce);
     }
     "asymmetric" => {
-      let key_path = matches.value_of("key").unwrap();
+      let key_path = args.value_of("key").unwrap();
       let key_content = match fs::read(Path::new(key_path)) {
         Ok(v) => v,
         Err(e) => {
