@@ -4,12 +4,13 @@ use clap::{App, AppSettings, Arg, SubCommand};
 pub fn run() {
   let matches = App::new("hexagon")
     .name(
-      r#"
-      ___
-      /  \ HEXAGON
-      \__/
+      r#"___
+/  \ HEXAGON
+\__/
     "#,
     )
+    .version("1.0.0")
+    .author("marco <ocramh11@gmail.com>")
     .about("A simple cryptography toolkit")
     .setting(AppSettings::SubcommandRequiredElseHelp)
     .subcommand(
