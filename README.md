@@ -15,12 +15,11 @@ This project is an exploration of the main concepts behind cryptographic systems
 In progress
 
 - [x] XSalsa20Poly1305 based symmetric encryption and decryption
-- [x] XSalsa20Poly1305 encryption and decryption unit testing
-- [x] RSA encryption and decryption implementation
 - [x] RSA encryption and decryption implementation
 - [x] RSA key public/private key generation
-- [x] CLI interface definition
-- [x] CLI tasks implementation
+- [ ] Elliptic-curve key public/private key generation
+- [ ] Elliptic-curve encryption and decryption implementation
+- [x] CLI interface
 - [ ] Output encryption/decryption to file
 
 ## Dependencies
