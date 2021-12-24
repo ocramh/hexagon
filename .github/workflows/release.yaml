@@ -1,119 +1,139 @@
-name: Release
+# shamelessly taken from
+# https://github.com/BurntSushi/ripgrep/blob/master/.github/workflows/release.yml
+
+name: release
 on:
   push:
-    branches:
-      - master
-
-env:
-  CARGO_TERM_COLOR: always
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  check:
-    name: Check
+  create-release:
+    name: Create Release
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+      hexagon_version: ${{ env.HEXAGON_VERSION }}
 
-  test:
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: install toolchain
-        uses: actions-rs/toolchain@v1
-      - name: run tests
-        uses: actions-rs/cargo@v1
+      - name: Get release version from tag
+        shell: bash
+        if: env.HEXAGON_VERSION == ''
+        run: |
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "HEXAGON_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "version is: ${{ env.HEXAGON_VERSION }}"
+      - name: Create GitHub release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          command: test
-          args: --verbose
+          tag_name: ${{ env.HEXAGON_VERSION }}
+          release_name: ${{ env.HEXAGON_VERSION }}
 
-  fmt:
-    name: fmt
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: install toolchain
-        uses: actions-rs/toolchain@v1
-      - name: add rustfmt component
-        run: rustup component add rustfmt
-      - name: rustfmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  release:
-    name: build and release
-    needs:
-      - check
-      - test
+  build-release:
+    name: Build Release
+    needs: ["create-release"]
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO: cargo
+      # When CARGO is set to CROSS, this is set to `--target matrix.target`.
+      TARGET_FLAGS: ""
+      # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
+      TARGET_DIR: ./target
+      # Emit back-traces on panics.
+      RUST_BACKTRACE: 1
     strategy:
       matrix:
+        build: [linux, linux-arm, macos]
         include:
-          - TARGET: x86_64-unknown-linux-gnu
-            OS: ubuntu-latest
-          - TARGET: x86_64-apple-darwin
-            OS: macos-latest
-          - TARGET: x86_64-pc-windows-gnu
-            OS: windows-latest
-    runs-on: ${{ matrix.config.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: install toolchain
-        uses: actions-rs/toolchain@v1
-      - name: Install rust target
-        run: rustup target add $TARGET
-      - name: Run build
-        run: cargo build --release --verbose --target $TARGET
-      - name: List target
-        run: find ./target
-      - name: Compress
-        run: |
-          mkdir -p ./artifacts
-          # windows is the only OS using a different convention for executable file name
-          if [[ $OS =~ ^windows.*$ ]]; then
-              EXEC=$NAME.exe
-          else
-              EXEC=$NAME
-          fi
-          if [[ $GITHUB_REF_TYPE =~ ^tag$ ]]; then
-            TAG=$GITHUB_REF_NAME
-          else
-            TAG=$GITHUB_SHA
-          fi
-          mv ./target/$TARGET/release/$EXEC ./$EXEC
-          tar -czf ./artifacts/$NAME-$TARGET-$TAG.tar.gz $EXEC
-      - name: Archive artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: result
-          path: |
-            ./artifacts
+          - build: linux
+            os: ubuntu-18.04
+            rust: nightly
+            target: x86_64-unknown-linux-musl
+          - build: linux-arm
+            os: ubuntu-18.04
+            rust: nightly
+            target: arm-unknown-linux-gnueabihf
+          - build: macos
+            os: macos-latest
+            rust: nightly
+            target: x86_64-apple-darwin
 
-  deploy:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: build
-    runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
         with:
-          name: result
-          path: ./artifacts
-      - name: List
-        run: find ./artifacts
-      - name: Release
-        uses: softprops/action-gh-release@v1
+          fetch-depth: 1
+
+      - name: Install packages (Ubuntu)
+        if: matrix.os == 'ubuntu-18.04'
+        run: |
+          ci/ubuntu-install-packages
+
+      - name: Install packages (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          ci/macos-install-packages
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
         with:
-          files: ./artifacts/*.tar.gz
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          target: ${{ matrix.target }}
+
+      - name: Use Cross
+        shell: bash
+        run: |
+          cargo install cross
+          echo "CARGO=cross" >> $GITHUB_ENV
+          echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+          echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
+      - name: Show command used for Cargo
+        run: |
+          echo "cargo command is: ${{ env.CARGO }}"
+          echo "target flag is: ${{ env.TARGET_FLAGS }}"
+          echo "target dir is: ${{ env.TARGET_DIR }}"
+
+      - name: Build release binary
+        run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
+
+      - name: Strip release binary (linux and macos)
+        if: matrix.build == 'linux' || matrix.build == 'macos'
+        run: strip "target/${{ matrix.target }}/release/hexagon"
+
+      - name: Strip release binary (arm)
+        if: matrix.build == 'linux-arm'
+        run: |
+          docker run --rm -v \
+            "$PWD/target:/target:Z" \
+            rustembedded/cross:arm-unknown-linux-gnueabihf \
+            arm-linux-gnueabihf-strip \
+            /target/arm-unknown-linux-gnueabihf/release/hexagon
+
+      - name: Build archive
+        shell: bash
+        run: |
+          outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
+          staging="hexagon-${{ needs.create-release.outputs.hexagon_version }}-${{ matrix.target }}"
+          mkdir -p "$staging"/{complete}
+
+          cp {README.md} "$staging/"
+
+          cp "target/${{ matrix.target }}/release/hexagon" "$staging/"
+          tar czf "$staging.tar.gz" "$staging"
+          echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload release archive
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.ASSET }}
+          asset_name: ${{ env.ASSET }}
+          asset_content_type: application/octet-stream

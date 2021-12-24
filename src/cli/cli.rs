@@ -60,7 +60,7 @@ pub fn run() {
             .long("input")
             .short("i")
             .takes_value(true)
-            .help("input to the base64 encoded ciphertext to decrypt"),
+            .help("base64 encoded ciphertext to decrypt"),
         )
         .arg(
           Arg::with_name("type")
