@@ -21,8 +21,8 @@ impl AsymmetricEncryptor for RSACryptor {
     self.keygen.gen_keypair(Some(size))
   }
 
-  // encrypt plaintext with public_key. If plaintext is larger than public_key size
-  // it will return an error
+  // encrypt plaintext with public_key. If plaintext is larger than public_key
+  // size it will return an error.
   fn encrypt(&self, plaintext: &[u8], public_key: &PublicKey) -> Result<String, CryptoError> {
     let mut dest_buffer: Vec<u8> = vec![0; public_key.size() as usize];
 
@@ -38,15 +38,16 @@ impl AsymmetricEncryptor for RSACryptor {
     Ok(base64::encode(dest_buffer))
   }
 
-  // deencrypt ciphertext with private_key
+  // decrypt ciphertext with private_key
   fn decrypt(&self, ciphertext: &str, private_key: &PrivateKey) -> Result<Vec<u8>, CryptoError> {
     let mut dest_buffer: Vec<u8> = vec![0; private_key.size() as usize];
+
     let from_b64 = match base64::decode(ciphertext) {
       Ok(val) => val,
       Err(_) => {
         return Err(CryptoError::Decryption(
-          "invalid base64 chipertext".to_string(),
-        ))
+          "invalid base64 encoded string used as ciphertext".to_string(),
+        ));
       }
     };
 

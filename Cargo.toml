@@ -1,14 +1,14 @@
 [package]
-name = "hexagon"
-version = "0.1.0"
 authors = ["ocramh <ocramh11@gmail.com>"]
 edition = "2018"
+name = "hexagon"
+version = "0.1.0"
 
 [dependencies]
-base64 = "^0.13"
-clap = { version = "3.0.0-beta.2", features = ["yaml"] }
-rand = "^0.8"
-thiserror = "1.0.21"
 anyhow = "1.0.33"
+base64 = "^0.13"
+clap = {version = "2.34.0", features = ["yaml"]}
+openssl = {version = "0.10", features = ["vendored"]}
+rand = "^0.8"
 sodiumoxide = "0.2.6"
-openssl = { version = "0.10", features = ["vendored"] }
+thiserror = "1.0.21"

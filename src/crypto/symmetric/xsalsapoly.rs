@@ -104,7 +104,6 @@ mod tests {
     let plaintext = "some data to encypt".to_string();
     let key = "my-secret-key";
     let nonce = "my-nonce".to_string();
-
     let cryptor: XsalsaPoly = XsalsaPoly::new();
 
     cryptor
