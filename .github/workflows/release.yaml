@@ -119,6 +119,7 @@ jobs:
         shell: bash
         run: |
           staging="hexagon-${{ needs.create-release.outputs.hexagon_version }}-${{ matrix.target }}"
+          mkdir -p "$staging"
           cp "target/${{ matrix.target }}/release/hexagon" "$staging/"
           cp README.md "$staging/"
           tar czf "$staging.tar.gz" "$staging"
