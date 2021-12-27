@@ -67,15 +67,15 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Install packages (Ubuntu)
-        if: matrix.os == 'ubuntu-18.04'
-        run: |
-          ci/ubuntu-install-packages
+      # - name: Install packages (Ubuntu)
+      #   if: matrix.os == 'ubuntu-18.04'
+      #   run: |
+      #     ci/ubuntu-install-packages
 
-      - name: Install packages (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          ci/macos-install-packages
+      # - name: Install packages (macOS)
+      #   if: matrix.os == 'macos-latest'
+      #   run: |
+      #     ci/macos-install-packages
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -118,13 +118,9 @@ jobs:
       - name: Build archive
         shell: bash
         run: |
-          outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
           staging="hexagon-${{ needs.create-release.outputs.hexagon_version }}-${{ matrix.target }}"
-          mkdir -p "$staging"/{complete}
-
-          cp {README.md} "$staging/"
-
           cp "target/${{ matrix.target }}/release/hexagon" "$staging/"
+          cp README.md "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
 
